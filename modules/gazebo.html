@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gazebo Simulation - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html" class="active">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#robotics">Robotics Model</a> &gt; Gazebo Simulation
+      </nav>
+
+      <h1 class="page-title">Gazebo Simulation</h1>
+      <p class="page-outcome">Spawn robots, test sensors, and iterate without hardware.</p>
+
+      <div class="pills">
+        <span class="pill pill-gazebo">Requires Gazebo</span>
+        <span class="pill pill-rviz">Needs RViz</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Gazebo is a 3D physics simulator for robots. It simulates rigid body dynamics, sensors (lidar, camera, IMU), actuators, and environments. Gazebo integrates with ROS2 via plugins that publish sensor data and subscribe to commands. It uses ODE, Bullet, or Dart physics engines. Gazebo Classic (version 11) and Gazebo (Ignition/Fortress+) are both actively used with ROS2 Humble.</p>
+
+        <h3>Why</h3>
+        <p>Hardware testing is slow, expensive, and risky during development. Gazebo enables rapid prototyping, algorithm validation, and edge case testing without physical robots. It provides reproducible test scenarios, simulates sensor noise realistically, and supports multi-robot systems. SLAM, navigation, and manipulation can be fully tested in simulation before hardware deployment.</p>
+
+        <h3>When</h3>
+        <p>Use Gazebo for initial algorithm development, CI/CD testing, and scenarios dangerous for real robots. Always validate sim-to-real transfer with hardware tests. Gazebo physics isn't perfect - contact forces, friction, and deformable objects have limitations. Use for high-level behavior testing, not precise dynamics. Always set <code>use_sim_time:=true</code> for all nodes when using Gazebo.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Launch Gazebo with Empty World</h3>
+        <p>Start Gazebo and spawn a robot:</p>
+        <pre><code class="python"># launch/gazebo_world.launch.py
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription, ExecuteProcess
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+import os
+
+def generate_launch_description():
+    # Launch Gazebo with empty world
+    gazebo_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            os.path.join(
+                get_package_share_directory('____'),  # gazebo_ros
+                'launch',
+                'gazebo.launch.py'
+            )
+        ]),
+        launch_arguments={
+            'world': os.path.join(
+                get_package_share_directory('my_robot_gazebo'),
+                'worlds',
+                'empty.world'
+            ),
+            'verbose': '____'  # true or false
+        }.items()
+    )
+    
+    # Spawn robot from URDF
+    urdf_file = os.path.join(
+        get_package_share_directory('my_robot_description'),
+        'urdf',
+        'robot.urdf'
+    )
+    
+    spawn_entity = Node(
+        package='____',  # gazebo_ros
+        executable='spawn_entity.py',
+        arguments=[
+            '-entity', 'my_robot',
+            '-file', ____,  # urdf_file
+            '-x', '0.0',
+            '-y', '0.0',
+            '-z', '0.1'
+        ],
+        output='screen'
+    )
+    
+    return LaunchDescription([
+        gazebo_launch,
+        spawn_entity
+    ])</code></pre>
+
+        <h3>Differential Drive Plugin in URDF</h3>
+        <p>Add controller plugin for mobile robot:</p>
+        <pre><code class="xml">&lt;robot&gt;
+  &lt;!-- Robot links and joints defined above --&gt;
+  
+  &lt;!-- Gazebo differential drive plugin --&gt;
+  &lt;gazebo&gt;
+    &lt;plugin name="diff_drive" filename="libgazebo_ros_diff_drive.so"&gt;
+      
+      &lt;!-- Update rate in Hz --&gt;
+      &lt;update_rate&gt;____&lt;/update_rate&gt;  &lt;!-- 50 --&gt;
+      
+      &lt;!-- Wheel joints --&gt;
+      &lt;left_joint&gt;____&lt;/left_joint&gt;  &lt;!-- wheel_left_joint --&gt;
+      &lt;right_joint&gt;wheel_right_joint&lt;/right_joint&gt;
+      
+      &lt;!-- Kinematics --&gt;
+      &lt;wheel_separation&gt;0.3&lt;/wheel_separation&gt;  &lt;!-- Distance between wheels in meters --&gt;
+      &lt;wheel_diameter&gt;____&lt;/wheel_diameter&gt;  &lt;!-- 0.1 meters --&gt;
+      
+      &lt;!-- Limits --&gt;
+      &lt;max_wheel_torque&gt;20&lt;/max_wheel_torque&gt;
+      &lt;max_wheel_acceleration&gt;1.0&lt;/max_wheel_acceleration&gt;
+      
+      &lt;!-- Input/Output --&gt;
+      &lt;command_topic&gt;cmd_vel&lt;/command_topic&gt;
+      &lt;odometry_topic&gt;____&lt;/odometry_topic&gt;  &lt;!-- odom --&gt;
+      
+      &lt;!-- Frames --&gt;
+      &lt;odometry_frame&gt;odom&lt;/odometry_frame&gt;
+      &lt;robot_base_frame&gt;base_footprint&lt;/robot_base_frame&gt;
+      
+      &lt;!-- Odometry source: world (perfect) or encoder (realistic drift) --&gt;
+      &lt;odometry_source&gt;____&lt;/odometry_source&gt;  &lt;!-- encoder --&gt;
+      
+      &lt;!-- Publish odometry TF --&gt;
+      &lt;publish_odom&gt;true&lt;/publish_odom&gt;
+      &lt;publish_odom_tf&gt;true&lt;/publish_odom_tf&gt;
+      &lt;publish_wheel_tf&gt;true&lt;/publish_wheel_tf&gt;
+      
+    &lt;/plugin&gt;
+  &lt;/gazebo&gt;
+&lt;/robot&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Common Plugins)</h2>
+
+        <h3>Laser Scanner Plugin</h3>
+        <pre><code class="xml">&lt;gazebo reference="laser_frame"&gt;
+  &lt;sensor type="ray" name="laser_sensor"&gt;
+    &lt;always_on&gt;true&lt;/always_on&gt;
+    &lt;update_rate&gt;10&lt;/update_rate&gt;
+    &lt;visualize&gt;true&lt;/visualize&gt;
+    
+    &lt;ray&gt;
+      &lt;scan&gt;
+        &lt;horizontal&gt;
+          &lt;samples&gt;360&lt;/samples&gt;
+          &lt;resolution&gt;1.0&lt;/resolution&gt;
+          &lt;min_angle&gt;-3.14159&lt;/min_angle&gt;
+          &lt;max_angle&gt;3.14159&lt;/max_angle&gt;
+        &lt;/horizontal&gt;
+      &lt;/scan&gt;
+      &lt;range&gt;
+        &lt;min&gt;0.1&lt;/min&gt;
+        &lt;max&gt;10.0&lt;/max&gt;
+        &lt;resolution&gt;0.01&lt;/resolution&gt;
+      &lt;/range&gt;
+      &lt;noise&gt;
+        &lt;type&gt;gaussian&lt;/type&gt;
+        &lt;mean&gt;0.0&lt;/mean&gt;
+        &lt;stddev&gt;0.01&lt;/stddev&gt;
+      &lt;/noise&gt;
+    &lt;/ray&gt;
+    
+    &lt;plugin name="laser_controller" filename="libgazebo_ros_ray_sensor.so"&gt;
+      &lt;ros&gt;
+        &lt;remapping&gt;~/out:=scan&lt;/remapping&gt;
+      &lt;/ros&gt;
+      &lt;output_type&gt;sensor_msgs/LaserScan&lt;/output_type&gt;
+      &lt;frame_name&gt;laser_frame&lt;/frame_name&gt;
+    &lt;/plugin&gt;
+  &lt;/sensor&gt;
+&lt;/gazebo&gt;</code></pre>
+
+        <h3>Camera Plugin</h3>
+        <pre><code class="xml">&lt;gazebo reference="camera_frame"&gt;
+  &lt;sensor type="camera" name="camera_sensor"&gt;
+    &lt;always_on&gt;true&lt;/always_on&gt;
+    &lt;update_rate&gt;30&lt;/update_rate&gt;
+    &lt;visualize&gt;false&lt;/visualize&gt;
+    
+    &lt;camera&gt;
+      &lt;horizontal_fov&gt;1.3962634&lt;/horizontal_fov&gt;  &lt;!-- 80 degrees in radians --&gt;
+      &lt;image&gt;
+        &lt;width&gt;640&lt;/width&gt;
+        &lt;height&gt;480&lt;/height&gt;
+        &lt;format&gt;R8G8B8&lt;/format&gt;
+      &lt;/image&gt;
+      &lt;clip&gt;
+        &lt;near&gt;0.05&lt;/near&gt;
+        &lt;far&gt;100.0&lt;/far&gt;
+      &lt;/clip&gt;
+      &lt;noise&gt;
+        &lt;type&gt;gaussian&lt;/type&gt;
+        &lt;mean&gt;0.0&lt;/mean&gt;
+        &lt;stddev&gt;0.007&lt;/stddev&gt;
+      &lt;/noise&gt;
+    &lt;/camera&gt;
+    
+    &lt;plugin name="camera_controller" filename="libgazebo_ros_camera.so"&gt;
+      &lt;ros&gt;
+        &lt;remapping&gt;~/image_raw:=camera/image_raw&lt;/remapping&gt;
+        &lt;remapping&gt;~/camera_info:=camera/camera_info&lt;/remapping&gt;
+      &lt;/ros&gt;
+      &lt;camera_name&gt;camera&lt;/camera_name&gt;
+      &lt;frame_name&gt;camera_frame&lt;/frame_name&gt;
+      &lt;hack_baseline&gt;0.07&lt;/hack_baseline&gt;
+    &lt;/plugin&gt;
+  &lt;/sensor&gt;
+&lt;/gazebo&gt;</code></pre>
+
+        <h3>IMU Plugin</h3>
+        <pre><code class="xml">&lt;gazebo reference="imu_frame"&gt;
+  &lt;sensor name="imu_sensor" type="imu"&gt;
+    &lt;always_on&gt;true&lt;/always_on&gt;
+    &lt;update_rate&gt;100&lt;/update_rate&gt;
+    
+    &lt;imu&gt;
+      &lt;angular_velocity&gt;
+        &lt;x&gt;
+          &lt;noise type="gaussian"&gt;
+            &lt;mean&gt;0.0&lt;/mean&gt;
+            &lt;stddev&gt;0.0002&lt;/stddev&gt;
+          &lt;/noise&gt;
+        &lt;/x&gt;
+        &lt;y&gt;
+          &lt;noise type="gaussian"&gt;
+            &lt;mean&gt;0.0&lt;/mean&gt;
+            &lt;stddev&gt;0.0002&lt;/stddev&gt;
+          &lt;/noise&gt;
+        &lt;/y&gt;
+        &lt;z&gt;
+          &lt;noise type="gaussian"&gt;
+            &lt;mean&gt;0.0&lt;/mean&gt;
+            &lt;stddev&gt;0.0002&lt;/stddev&gt;
+          &lt;/noise&gt;
+        &lt;/z&gt;
+      &lt;/angular_velocity&gt;
+      &lt;linear_acceleration&gt;
+        &lt;x&gt;
+          &lt;noise type="gaussian"&gt;
+            &lt;mean&gt;0.0&lt;/mean&gt;
+            &lt;stddev&gt;0.017&lt;/stddev&gt;
+          &lt;/noise&gt;
+        &lt;/x&gt;
+        &lt;y&gt;
+          &lt;noise type="gaussian"&gt;
+            &lt;mean&gt;0.0&lt;/mean&gt;
+            &lt;stddev&gt;0.017&lt;/stddev&gt;
+          &lt;/noise&gt;
+        &lt;/y&gt;
+        &lt;z&gt;
+          &lt;noise type="gaussian"&gt;
+            &lt;mean&gt;0.0&lt;/mean&gt;
+            &lt;stddev&gt;0.017&lt;/stddev&gt;
+          &lt;/noise&gt;
+        &lt;/z&gt;
+      &lt;/linear_acceleration&gt;
+    &lt;/imu&gt;
+    
+    &lt;plugin name="imu_plugin" filename="libgazebo_ros_imu_sensor.so"&gt;
+      &lt;ros&gt;
+        &lt;remapping&gt;~/out:=imu&lt;/remapping&gt;
+      &lt;/ros&gt;
+      &lt;frame_name&gt;imu_frame&lt;/frame_name&gt;
+      &lt;initial_orientation_as_reference&gt;false&lt;/initial_orientation_as_reference&gt;
+    &lt;/plugin&gt;
+  &lt;/sensor&gt;
+&lt;/gazebo&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Simulation Time Configuration</h3>
+        <pre><code class="yaml"># CRITICAL: All nodes must use simulation time
+controller:
+  ros__parameters:
+    use_sim_time: true  # Get time from /clock topic, not system clock
+
+slam_toolbox:
+  ros__parameters:
+    use_sim_time: true
+
+# Launch argument pattern
+ros2 launch my_pkg navigation.launch.py use_sim_time:=true</code></pre>
+
+        <h3>World File Structure</h3>
+        <pre><code class="xml">&lt;?xml version="1.0"?&gt;
+&lt;sdf version="1.6"&gt;
+  &lt;world name="default"&gt;
+    
+    &lt;!-- Physics engine settings --&gt;
+    &lt;physics name="default_physics" type="ode"&gt;
+      &lt;max_step_size&gt;0.001&lt;/max_step_size&gt;
+      &lt;real_time_factor&gt;1.0&lt;/real_time_factor&gt;
+      &lt;real_time_update_rate&gt;1000.0&lt;/real_time_update_rate&gt;
+    &lt;/physics&gt;
+    
+    &lt;!-- Lighting --&gt;
+    &lt;light name="sun" type="directional"&gt;
+      &lt;cast_shadows&gt;true&lt;/cast_shadows&gt;
+      &lt;pose&gt;0 0 10 0 0 0&lt;/pose&gt;
+      &lt;diffuse&gt;0.8 0.8 0.8 1&lt;/diffuse&gt;
+      &lt;specular&gt;0.2 0.2 0.2 1&lt;/specular&gt;
+      &lt;direction&gt;-0.5 0.1 -0.9&lt;/direction&gt;
+    &lt;/light&gt;
+    
+    &lt;!-- Ground plane --&gt;
+    &lt;include&gt;
+      &lt;uri&gt;model://ground_plane&lt;/uri&gt;
+    &lt;/include&gt;
+    
+    &lt;!-- Static obstacles --&gt;
+    &lt;model name="wall_1"&gt;
+      &lt;static&gt;true&lt;/static&gt;
+      &lt;pose&gt;5 0 0.5 0 0 0&lt;/pose&gt;
+      &lt;link name="link"&gt;
+        &lt;collision name="collision"&gt;
+          &lt;geometry&gt;
+            &lt;box&gt;
+              &lt;size&gt;0.2 10 1&lt;/size&gt;
+            &lt;/box&gt;
+          &lt;/geometry&gt;
+        &lt;/collision&gt;
+        &lt;visual name="visual"&gt;
+          &lt;geometry&gt;
+            &lt;box&gt;
+              &lt;size&gt;0.2 10 1&lt;/size&gt;
+            &lt;/box&gt;
+          &lt;/geometry&gt;
+          &lt;material&gt;
+            &lt;ambient&gt;0.5 0.5 0.5 1&lt;/ambient&gt;
+            &lt;diffuse&gt;0.5 0.5 0.5 1&lt;/diffuse&gt;
+          &lt;/material&gt;
+        &lt;/visual&gt;
+      &lt;/link&gt;
+    &lt;/model&gt;
+    
+  &lt;/world&gt;
+&lt;/sdf&gt;</code></pre>
+
+        <h3>Gazebo Model Path</h3>
+        <pre><code class="bash"># Set environment variable for custom models
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/ros2_ws/src/my_robot_gazebo/models
+
+# Or in launch file
+import os
+os.environ['GAZEBO_MODEL_PATH'] = os.environ.get('GAZEBO_MODEL_PATH', '') + \
+    ':' + os.path.join(get_package_share_directory('my_robot_gazebo'), 'models')</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Launch Gazebo
+ros2 launch gazebo_ros gazebo.launch.py
+
+# Spawn robot
+ros2 run gazebo_ros spawn_entity.py -entity my_robot -file robot.urdf -x 0 -y 0 -z 0.1
+
+# Check simulation time is being published
+ros2 topic echo /clock
+# Expected: Clock messages with simulation time
+
+# Verify sensor topics
+ros2 topic list
+# Expected: /scan, /camera/image_raw, /imu, /odom
+
+# Test robot control
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.5}, angular: {z: 0.0}}"
+# Expected: Robot moves forward in Gazebo
+
+# Check TF tree includes odom frame
+ros2 run tf2_tools view_frames
+# Expected: odom → base_footprint → base_link chain</code></pre>
+
+        <h3>RViz with Gazebo</h3>
+        <pre><code class="bash"># Launch RViz in parallel with Gazebo
+rviz2
+
+# In RViz:
+# 1. Set Fixed Frame to "odom"
+# 2. Add display: RobotModel
+# 3. Add display: LaserScan, topic /scan
+# 4. Add display: Camera, topic /camera/image_raw
+# 5. Expected: Robot appears, laser scan shows obstacles, camera shows simulated view</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Pause Gazebo physics (Space bar) before spawning robots to prevent physics glitches. Resume after spawn completes.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Sensor Topics Not Published</h3>
+        <p><strong>Symptom:</strong> Robot spawns in Gazebo but /scan or /camera topics don't exist.</p>
+        <p><strong>Root Cause:</strong> Plugin not properly configured in URDF or sensor link missing collision/inertial.</p>
+        <p><strong>Fix:</strong> Verify plugin block and sensor link completeness:</p>
+        <pre><code class="xml">&lt;!-- Sensor link must have mass and inertia --&gt;
+&lt;link name="laser_frame"&gt;
+  &lt;visual&gt;...&lt;/visual&gt;
+  &lt;collision&gt;
+    &lt;geometry&gt;&lt;cylinder radius="0.05" length="0.05"/&gt;&lt;/geometry&gt;
+  &lt;/collision&gt;
+  &lt;inertial&gt;
+    &lt;mass value="0.1"/&gt;
+    &lt;inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/&gt;
+  &lt;/inertial&gt;
+&lt;/link&gt;
+
+&lt;!-- Plugin must reference correct link --&gt;
+&lt;gazebo reference="laser_frame"&gt;  &lt;!-- Match link name exactly --&gt;
+  &lt;sensor type="ray" name="laser_sensor"&gt;
+    ...
+  &lt;/sensor&gt;
+&lt;/gazebo&gt;</code></pre>
+
+        <h3>Failure 2: Time Synchronization Errors</h3>
+        <p><strong>Symptom:</strong> "Message from [time] is out of bounds" errors, TF lookup failures.</p>
+        <p><strong>Root Cause:</strong> Some nodes use system time while Gazebo publishes simulation time.</p>
+        <p><strong>Fix:</strong> Ensure all nodes use sim time:</p>
+        <pre><code class="python"># In every launch file when using Gazebo
+def generate_launch_description():
+    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+    
+    return LaunchDescription([
+        DeclareLaunchArgument('use_sim_time', default_value='true'),
+        
+        Node(
+            package='my_pkg',
+            executable='my_node',
+            parameters=[{'use_sim_time': use_sim_time}]
+        )
+    ])
+
+# Verify /clock is being published
+ros2 topic hz /clock
+# Expected: ~1000 Hz from Gazebo</code></pre>
+
+        <h3>Failure 3: Robot Explodes or Oscillates Wildly</h3>
+        <p><strong>Symptom:</strong> Robot flies apart, vibrates violently, or falls through ground.</p>
+        <p><strong>Root Cause:</strong> Invalid inertia matrix, incorrect contact parameters, or too-high gains.</p>
+        <p><strong>Fix:</strong> Use realistic physical properties:</p>
+        <pre><code class="xml">&lt;!-- Use proper inertia (positive definite matrix) --&gt;
+&lt;inertial&gt;
+  &lt;mass value="10.0"/&gt;
+  &lt;!-- Calculate from geometry, don't guess --&gt;
+  &lt;inertia ixx="0.1" ixy="0.0" ixz="0.0"
+           iyy="0.1" iyz="0.0"
+           izz="0.1"/&gt;
+&lt;/inertial&gt;
+
+&lt;!-- Set reasonable contact parameters --&gt;
+&lt;gazebo reference="base_link"&gt;
+  &lt;kp&gt;1000000.0&lt;/kp&gt;  &lt;!-- Contact stiffness --&gt;
+  &lt;kd&gt;10.0&lt;/kd&gt;  &lt;!-- Contact damping --&gt;
+  &lt;mu1&gt;0.5&lt;/mu1&gt;  &lt;!-- Friction coefficient --&gt;
+  &lt;mu2&gt;0.5&lt;/mu2&gt;
+&lt;/gazebo&gt;
+
+&lt;!-- Reduce physics step size if vibration persists --&gt;
+&lt;physics type="ode"&gt;
+  &lt;max_step_size&gt;0.001&lt;/max_step_size&gt;
+  &lt;real_time_update_rate&gt;1000&lt;/real_time_update_rate&gt;
+&lt;/physics&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Detect Missing Simulation Time</h3>
+        <p>Launch nodes without use_sim_time and observe failures:</p>
+
+        <pre><code class="bash"># Terminal 1: Launch Gazebo (publishes /clock)
+ros2 launch gazebo_ros gazebo.launch.py
+
+# Terminal 2: Launch node WITHOUT sim time parameter
+ros2 run my_pkg my_node
+# Node uses system time, Gazebo uses sim time
+
+# Terminal 3: Try TF lookup
+ros2 run tf2_ros tf2_echo odom base_link
+# Expected: Extrapolation errors, "future" warnings</code></pre>
+
+        <p><strong>Detection:</strong> Check parameter:</p>
+        <pre><code class="bash">ros2 param get /my_node use_sim_time
+# If false or not set, node will have time sync issues</code></pre>
+
+        <p><strong>Recovery:</strong> Restart node with correct parameter:</p>
+        <pre><code class="bash">ros2 run my_pkg my_node --ros-args -p use_sim_time:=true</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Gazebo runs slower than real-time on resource-constrained machines. Monitor real-time factor in Gazebo GUI (should be ~1.0). Lower physics update rate or simplify world if factor drops below 0.5.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a complete Gazebo test environment:</p>
+
+        <ol>
+          <li>Create custom world with walls forming a maze</li>
+          <li>Add dynamic obstacles (moving objects using Gazebo actors)</li>
+          <li>Configure realistic sensor noise parameters based on datasheet</li>
+          <li>Add multiple robots with different namespaces</li>
+          <li>Create automated test: spawn robot, send nav goals, verify arrival</li>
+          <li>Record bag file from simulation for offline replay</li>
+          <li>Add Gazebo GUI plugins for custom visualization</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="urdf.html">URDF Models</a> - Define robots for Gazebo</li>
+          <li><a href="slam.html">SLAM Toolbox</a> - Test mapping in simulation</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - Full navigation testing in Gazebo</li>
+          <li><a href="bag.html">Bag Recording</a> - Capture simulation data</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official docs: <code>classic.gazebosim.org/tutorials?cat=connect_ros</code> and <code>gazebosim.org/docs</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="urdf.html" class="prev">URDF Models</a>
+        <a href="bag.html" class="next">Bag Recording</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

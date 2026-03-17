@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bag Recording - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html" class="active">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#robotics">Robotics Model</a> &gt; Bag Recording
+      </nav>
+
+      <h1 class="page-title">Bag Recording</h1>
+      <p class="page-outcome">Record, replay, and analyze robot data for debugging and benchmarking.</p>
+
+      <div class="pills">
+        <span class="pill pill-data">Data Logging</span>
+        <span class="pill pill-debug">Debugging</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>ROS2 bags record and replay topic messages. The bag format stores timestamped messages in a SQLite3 or MCAP database. Bags preserve message type info, QoS profiles, and topic metadata. They support selective recording (specific topics), compression (zstd/lz4), and splitting (max size/duration). Bags enable offline analysis, regression testing, and data sharing without re-running robot hardware.</p>
+
+        <h3>Why</h3>
+        <p>Robot testing is non-deterministic - sensor noise, timing variations, and environmental changes make bugs hard to reproduce. Bags capture exact message sequences for deterministic replay. They enable post-processing (SLAM, perception pipelines), algorithm benchmarking on consistent data, and collaborative debugging. Bags reduce hardware dependency during development and support CI/CD testing with real-world data.</p>
+
+        <h3>When</h3>
+        <p>Record bags during all robot tests, especially when bugs occur. Use bags for algorithm validation, performance profiling, and training ML models. Replay bags to test code changes without hardware. Be aware of disk space - sensor data (images, lidar) fills quickly. Use compression and selective recording. Bags don't preserve service calls or parameter changes by default. QoS incompatibility during playback can cause silent failures.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Record a Bag</h3>
+        <p>Capture robot data from multiple topics:</p>
+        <pre><code class="bash"># Record specific topics
+ros2 bag record /scan /odom /cmd_vel /camera/image_raw
+
+# Record all topics (careful - generates huge files)
+ros2 bag record -a
+
+# Record with output name and compression
+ros2 bag record -o my_test_run \
+    --compression-mode file \  # or 'message'
+    --compression-format zstd \  # or 'lz4'
+    /scan /odom /tf /tf_static
+
+# Record with max duration or size
+ros2 bag record -o session \
+    --max-bag-duration ____ \  # 300 (5 minutes in seconds)
+    --max-bag-size ____ \  # 1000000000 (1GB in bytes)
+    -a
+
+# Record with regex pattern
+ros2 bag record -e "/camera/.+" "/lidar/.+"
+# Records all topics under /camera/* and /lidar/*</code></pre>
+
+        <h3>Inspect Bag Contents</h3>
+        <p>Analyze recorded data:</p>
+        <pre><code class="bash"># Show bag metadata
+ros2 bag info my_test_run
+
+# Output example:
+# Files:             my_test_run_0.db3
+# Duration:          120.5s
+# Start:             Jan 10 2024 14:30:00
+# End:               Jan 10 2024 14:32:00
+# Messages:          12450
+# Topic information:
+#   /scan: 1200 msgs (sensor_msgs/msg/LaserScan)
+#   /odom: 6000 msgs (nav_msgs/msg/Odometry)
+#   /cmd_vel: 500 msgs (geometry_msgs/msg/Twist)
+#   /tf: 4750 msgs (tf2_msgs/msg/TFMessage)</code></pre>
+
+        <h3>Replay a Bag</h3>
+        <p>Play back recorded data:</p>
+        <pre><code class="bash"># Basic replay
+ros2 bag play my_test_run
+
+# Play at different speed
+ros2 bag play my_test_run --rate ____  # 0.5 (half speed)
+
+# Loop playback
+ros2 bag play my_test_run --loop
+
+# Play specific topics only
+ros2 bag play my_test_run \
+    --topics /scan /odom
+
+# Remap topics during playback
+ros2 bag play my_test_run \
+    --remap ____:/scan_sim  # /scan:/scan_sim
+    --remap /odom:____  # /odom_sim
+
+# Start from specific timestamp
+ros2 bag play my_test_run \
+    --start-offset 30.0  # Skip first 30 seconds
+
+# Pause at start (press space to continue)
+ros2 bag play my_test_run --pause</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Programmatic API)</h2>
+
+        <h3>Recording from Python</h3>
+        <pre><code class="python">from rclpy.node import Node
+from rosbag2_py import Writer, StorageOptions, ConverterOptions, TopicMetadata
+from sensor_msgs.msg import LaserScan
+import rclpy
+
+class BagRecorderNode(Node):
+    def __init__(self):
+        super().__init__('bag_recorder')
+        
+        # Setup bag writer
+        storage_options = StorageOptions(
+            uri='my_bag',
+            storage_id='sqlite3'  # or 'mcap'
+        )
+        converter_options = ConverterOptions(
+            input_serialization_format='cdr',
+            output_serialization_format='____'  # cdr
+        )
+        
+        self.writer = Writer()
+        self.writer.open(storage_options, converter_options)
+        
+        # Add topic metadata
+        topic_info = TopicMetadata(
+            name='/scan',
+            type='sensor_msgs/msg/LaserScan',
+            serialization_format='cdr'
+        )
+        self.writer.create_topic(topic_info)
+        
+        # Subscribe to topic
+        self.subscription = self.create_subscription(
+            LaserScan,
+            '/scan',
+            self.scan_callback,
+            ____  # 10
+        )
+        
+    def scan_callback(self, msg):
+        # Write message to bag
+        timestamp = self.get_clock().now().nanoseconds
+        self.writer.write(
+            '/scan',
+            ____,  # serialize(msg) - use rclpy.serialization.serialize_message
+            timestamp
+        )
+        
+    def __del__(self):
+        self.writer.close()
+
+def main():
+    rclpy.init()
+    node = BagRecorderNode()
+    rclpy.spin(node)
+    rclpy.shutdown()</code></pre>
+
+        <h3>Reading Bag in C++</h3>
+        <pre><code class="cpp">#include &lt;rosbag2_cpp/reader.hpp&gt;
+#include &lt;rosbag2_cpp/storage_options.hpp&gt;
+#include &lt;rosbag2_cpp/converter_options.hpp&gt;
+#include &lt;rclcpp/serialization.hpp&gt;
+#include &lt;sensor_msgs/msg/laser_scan.hpp&gt;
+
+int main() {
+    // Setup reader
+    rosbag2_cpp::Reader reader;
+    rosbag2_storage::StorageOptions storage_options;
+    storage_options.uri = "my_bag";
+    storage_options.storage_id = "sqlite3";
+    
+    rosbag2_cpp::ConverterOptions converter_options;
+    converter_options.input_serialization_format = "cdr";
+    converter_options.output_serialization_format = "cdr";
+    
+    reader.open(storage_options, converter_options);
+    
+    // Read messages
+    while (reader.has_next()) {
+        auto serialized_msg = reader.read_next();
+        
+        if (serialized_msg->topic_name == "/scan") {
+            // Deserialize
+            rclcpp::SerializedMessage serialized(
+                *serialized_msg->serialized_data
+            );
+            
+            sensor_msgs::msg::LaserScan scan;
+            rclcpp::Serialization&lt;sensor_msgs::msg::LaserScan&gt; serializer;
+            serializer.deserialize_message(&serialized, &scan);
+            
+            // Process scan message
+            std::cout << "Scan with " << scan.ranges.size() 
+                      << " points at time " 
+                      << serialized_msg->time_stamp << std::endl;
+        }
+    }
+    
+    return 0;
+}</code></pre>
+
+        <h3>Launch File Integration</h3>
+        <pre><code class="python">from launch import LaunchDescription
+from launch.actions import ExecuteProcess
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    # Start bag recording in launch
+    bag_record = ExecuteProcess(
+        cmd=[
+            'ros2', 'bag', 'record',
+            '-o', 'test_session',
+            '--compression-mode', 'file',
+            '--compression-format', 'zstd',
+            '/scan', '/odom', '/tf', '/tf_static'
+        ],
+        output='screen'
+    )
+    
+    # Your nodes
+    my_node = Node(
+        package='my_pkg',
+        executable='my_node',
+        name='my_node'
+    )
+    
+    return LaunchDescription([
+        bag_record,
+        my_node
+    ])</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Storage Formats</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Format</th>
+              <th>Pros</th>
+              <th>Cons</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>sqlite3</code></td>
+              <td>Default, wide support, good tooling</td>
+              <td>Slower than MCAP, larger file size</td>
+            </tr>
+            <tr>
+              <td><code>mcap</code></td>
+              <td>Faster write, better compression, industry standard</td>
+              <td>Less mature tooling in ROS2</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Compression Formats</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Format</th>
+              <th>Speed</th>
+              <th>Ratio</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>zstd</code></td>
+              <td>Fast</td>
+              <td>High</td>
+              <td>General purpose, best default</td>
+            </tr>
+            <tr>
+              <td><code>lz4</code></td>
+              <td>Very fast</td>
+              <td>Medium</td>
+              <td>High-bandwidth recording (cameras)</td>
+            </tr>
+            <tr>
+              <td>None</td>
+              <td>Instant</td>
+              <td>1:1</td>
+              <td>Maximum recording rate, post-process compression</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>QoS Profile Matching</h3>
+        <pre><code class="bash"># When playing back, bag player publishes with RECORDED QoS by default
+# This can cause compatibility issues
+
+# Override playback QoS to match subscribers
+ros2 bag play my_bag \
+    --qos-profile-overrides-path qos_overrides.yaml
+
+# qos_overrides.yaml
+/scan:
+  reliability: reliable  # Was best_effort in bag
+  durability: transient_local</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Record a short test bag
+ros2 bag record -o test_bag /scan /odom --max-bag-duration 10
+
+# Inspect recorded data
+ros2 bag info test_bag
+# Expected: Shows topic list, message counts, duration
+
+# Verify message count matches expected rate
+# If /scan publishes at 10 Hz for 10 seconds:
+# Expected: ~100 messages
+
+# Play back and verify topics appear
+ros2 bag play test_bag &
+ros2 topic list
+# Expected: /scan and /odom appear
+
+# Echo messages during playback
+ros2 topic echo /scan --once
+# Expected: LaserScan message printed
+
+# Check playback timestamps
+ros2 topic echo /clock
+# Expected: Clock advances during playback (sim time)
+
+# Stop playback
+fg  # Bring to foreground
+# Press Ctrl+C</code></pre>
+
+        <h3>Data Integrity Checks</h3>
+        <pre><code class="python"># Python script to validate bag
+import rosbag2_py
+from rclpy.serialization import deserialize_message
+from sensor_msgs.msg import LaserScan
+
+reader = rosbag2_py.SequentialReader()
+storage_options = rosbag2_py.StorageOptions(uri='test_bag', storage_id='sqlite3')
+converter_options = rosbag2_py.ConverterOptions('', '')
+reader.open(storage_options, converter_options)
+
+scan_count = 0
+while reader.has_next():
+    (topic, data, t) = reader.read_next()
+    if topic == '/scan':
+        msg = deserialize_message(data, LaserScan)
+        scan_count += 1
+        
+        # Validate data
+        assert len(msg.ranges) > 0, "Empty scan"
+        assert msg.angle_min < msg.angle_max, "Invalid angle range"
+
+print(f"Validated {scan_count} scan messages")</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Always record /tf and /tf_static when recording sensor data. Many visualization and processing tools require transforms to function correctly.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: QoS Mismatch During Playback</h3>
+        <p><strong>Symptom:</strong> Topics published during playback but subscribers don't receive messages.</p>
+        <p><strong>Root Cause:</strong> Bag recorded with different QoS than subscriber expects (e.g., best-effort vs reliable).</p>
+        <p><strong>Fix:</strong> Check recorded QoS and override if needed:</p>
+        <pre><code class="bash"># Check recorded QoS
+ros2 bag info my_bag
+# Look at "Offered QoS profiles" for each topic
+
+# If subscriber expects reliable but bag has best_effort:
+# Option 1: Override during playback
+ros2 bag play my_bag --qos-profile-overrides-path qos_override.yaml
+
+# qos_override.yaml
+/scan:
+  reliability: reliable
+
+# Option 2: Fix subscriber QoS to match recorded data
+# In subscriber code:
+rclcpp::QoS qos(10);
+qos.best_effort();  # Match recorded profile
+auto sub = node->create_subscription&lt;LaserScan&gt;("/scan", qos, callback);</code></pre>
+
+        <h3>Failure 2: Namespace Collisions</h3>
+        <p><strong>Symptom:</strong> Playing back bag while robot is running causes duplicate topics or wrong data routing.</p>
+        <p><strong>Root Cause:</strong> Bag topics have same names as live robot topics.</p>
+        <p><strong>Fix:</strong> Remap topics during playback:</p>
+        <pre><code class="bash"># Play bag data under /sim namespace
+ros2 bag play my_bag \
+    --remap /scan:=/sim/scan \
+    --remap /odom:=/sim/odom \
+    --remap /cmd_vel:=/sim/cmd_vel
+
+# Now live robot publishes to /scan, bag publishes to /sim/scan</code></pre>
+
+        <h3>Failure 3: Disk Space Exhaustion</h3>
+        <p><strong>Symptom:</strong> Bag recording stops prematurely with I/O error.</p>
+        <p><strong>Root Cause:</strong> Camera or lidar topics fill disk quickly.</p>
+        <p><strong>Fix:</strong> Use compression and size limits:</p>
+        <pre><code class="bash"># Monitor disk during recording
+df -h /path/to/bag/directory
+
+# Set maximum bag size (splits into multiple files)
+ros2 bag record -o my_bag \
+    --max-bag-size 500000000 \  # 500MB per file
+    --compression-mode file \
+    --compression-format zstd \
+    /scan /odom  # Don't record /camera if not needed
+
+# For analysis, record images at lower rate
+ros2 topic hz /camera/image_raw
+# If 30 Hz, throttle to 5 Hz:
+ros2 run topic_tools throttle messages /camera/image_raw 5.0 /camera/image_throttled
+
+# Then record throttled topic
+ros2 bag record /camera/image_throttled /scan /odom</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Detect Time Desynchronization</h3>
+        <p>Play bag without simulation time and observe timestamp issues:</p>
+
+        <pre><code class="bash"># Terminal 1: Play bag WITHOUT clock publishing
+ros2 bag play my_bag --clock 0
+# Bag doesn't publish to /clock topic
+
+# Terminal 2: Start node with sim time enabled
+ros2 run my_pkg my_node --ros-args -p use_sim_time:=true
+# Node waits for /clock but never receives it
+
+# Terminal 3: Try to echo topics
+ros2 topic echo /scan --once
+# Messages published but timestamps are in the past
+
+# Check TF
+ros2 run tf2_ros tf2_echo map base_link
+# Expected: Lookup fails or extrapolation errors</code></pre>
+
+        <p><strong>Detection:</strong> Check clock source:</p>
+        <pre><code class="bash">ros2 topic list | grep clock
+# If empty, no simulation time being published
+
+ros2 param get /my_node use_sim_time
+# If true but no /clock, node can't progress time</code></pre>
+
+        <p><strong>Recovery:</strong> Enable clock publishing:</p>
+        <pre><code class="bash">ros2 bag play my_bag --clock  # Publishes to /clock
+# OR disable sim time in nodes:
+ros2 run my_pkg my_node --ros-args -p use_sim_time:=false</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Bags don't record service calls or action goals. Use --all option to include service introspection data, but this significantly increases bag size.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a complete bag-based testing pipeline:</p>
+
+        <ol>
+          <li>Record comprehensive test bag with robot performing standard routine</li>
+          <li>Create Python script to automatically play bag and verify outputs</li>
+          <li>Implement bag splitting to extract specific time ranges</li>
+          <li>Build bag merger to combine data from multiple robots</li>
+          <li>Add automated bag compression for archival (post-process with zstd)</li>
+          <li>Create bag anonymization tool (remove camera images, keep lidar)</li>
+          <li>Integrate bag playback into CI/CD for regression testing</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="qos.html">QoS Policies</a> - Understand compatibility for playback</li>
+          <li><a href="testing.html">Testing</a> - Use bags in automated tests</li>
+          <li><a href="slam.html">SLAM Toolbox</a> - Offline map building from bags</li>
+          <li><a href="diagnostics.html">Diagnostics</a> - Analyze bag data for issues</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official docs: <code>docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Recording-And-Playing-Back-Data/Recording-And-Playing-Back-Data.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="gazebo.html" class="prev">Gazebo Simulation</a>
+        <a href="slam.html" class="next">SLAM Toolbox</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

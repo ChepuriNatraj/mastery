@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROS2 Mastery Dojo - Natraj</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="modules/pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="modules/services.html">Services</a></li>
+        <li><a href="modules/actions.html">Actions</a></li>
+        <li><a href="modules/params.html">Parameters</a></li>
+        <li><a href="modules/launch.html">Launch Files</a></li>
+        <li><a href="modules/qos.html">QoS Policies</a></li>
+        <li><a href="modules/lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="modules/tf.html">TF Transforms</a></li>
+        <li><a href="modules/urdf.html">URDF Models</a></li>
+        <li><a href="modules/gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="modules/bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="modules/slam.html">SLAM Toolbox</a></li>
+        <li><a href="modules/amcl.html">AMCL Localization</a></li>
+        <li><a href="modules/nav2.html">Nav2 Stack</a></li>
+        <li><a href="modules/costmaps.html">Costmaps</a></li>
+        <li><a href="modules/planners.html">Path Planners</a></li>
+        <li><a href="modules/controllers.html">Controllers</a></li>
+        <li><a href="modules/bt.html">Behavior Trees</a></li>
+        <li><a href="modules/recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="modules/build.html">Build System</a></li>
+        <li><a href="modules/testing.html">Testing</a></li>
+        <li><a href="modules/diagnostics.html">Diagnostics</a></li>
+        <li><a href="modules/dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <!-- Hero Section -->
+      <div class="hero-section">
+        <h1 class="hero-title">Welcome to the Dojo</h1>
+        <p class="hero-subtitle">Master ROS2, SLAM, and Nav2 through deliberate daily practice. One focused hour a day. Real robots, real code, real skills.</p>
+      </div>
+
+      <!-- Visual Module Graph -->
+      <section class="module-graph">
+        <h2 class="graph-title">🗺️ Interactive Learning Path</h2>
+        <div class="graph-container">
+          <!-- Column 1: Core ROS2 -->
+          <div class="graph-column">
+            <div class="graph-column-title">Core ROS2</div>
+            <a href="modules/pubsub.html" class="module-node core">
+              <div class="node-icon">📡</div>
+              <div class="node-title">Pub/Sub</div>
+              <div class="node-desc">Messages & Topics</div>
+            </a>
+            <a href="modules/services.html" class="module-node core">
+              <div class="node-icon">🔄</div>
+              <div class="node-title">Services</div>
+              <div class="node-desc">Request/Response</div>
+            </a>
+            <a href="modules/actions.html" class="module-node core">
+              <div class="node-icon">⚡</div>
+              <div class="node-title">Actions</div>
+              <div class="node-desc">Long Tasks</div>
+            </a>
+            <a href="modules/params.html" class="module-node core">
+              <div class="node-icon">⚙️</div>
+              <div class="node-title">Parameters</div>
+              <div class="node-desc">Configuration</div>
+            </a>
+            <a href="modules/launch.html" class="module-node core">
+              <div class="node-icon">🚀</div>
+              <div class="node-title">Launch</div>
+              <div class="node-desc">Multi-Node</div>
+            </a>
+            <a href="modules/qos.html" class="module-node core">
+              <div class="node-icon">📊</div>
+              <div class="node-title">QoS</div>
+              <div class="node-desc">Reliability</div>
+            </a>
+            <a href="modules/lifecycle.html" class="module-node core">
+              <div class="node-icon">♻️</div>
+              <div class="node-title">Lifecycle</div>
+              <div class="node-desc">State Mgmt</div>
+            </a>
+          </div>
+
+          <!-- Column 2: Robotics Model -->
+          <div class="graph-column">
+            <div class="graph-column-title">Robotics Model</div>
+            <a href="modules/tf.html" class="module-node model">
+              <div class="node-icon">🎯</div>
+              <div class="node-title">TF</div>
+              <div class="node-desc">Transforms</div>
+            </a>
+            <a href="modules/urdf.html" class="module-node model">
+              <div class="node-icon">🤖</div>
+              <div class="node-title">URDF</div>
+              <div class="node-desc">Robot Models</div>
+            </a>
+            <a href="modules/gazebo.html" class="module-node model">
+              <div class="node-icon">🌐</div>
+              <div class="node-title">Gazebo</div>
+              <div class="node-desc">Simulation</div>
+            </a>
+            <a href="modules/bag.html" class="module-node model">
+              <div class="node-icon">💾</div>
+              <div class="node-title">Bag</div>
+              <div class="node-desc">Recording</div>
+            </a>
+          </div>
+
+          <!-- Column 3: SLAM & Nav2 -->
+          <div class="graph-column">
+            <div class="graph-column-title">SLAM & Nav2</div>
+            <a href="modules/slam.html" class="module-node nav">
+              <div class="node-icon">🗺️</div>
+              <div class="node-title">SLAM</div>
+              <div class="node-desc">Mapping</div>
+            </a>
+            <a href="modules/amcl.html" class="module-node nav">
+              <div class="node-icon">📍</div>
+              <div class="node-title">AMCL</div>
+              <div class="node-desc">Localization</div>
+            </a>
+            <a href="modules/nav2.html" class="module-node nav">
+              <div class="node-icon">🧭</div>
+              <div class="node-title">Nav2</div>
+              <div class="node-desc">Navigation</div>
+            </a>
+            <a href="modules/costmaps.html" class="module-node nav">
+              <div class="node-icon">🗺️</div>
+              <div class="node-title">Costmaps</div>
+              <div class="node-desc">Obstacles</div>
+            </a>
+            <a href="modules/planners.html" class="module-node nav">
+              <div class="node-icon">🛤️</div>
+              <div class="node-title">Planners</div>
+              <div class="node-desc">Path Finding</div>
+            </a>
+            <a href="modules/controllers.html" class="module-node nav">
+              <div class="node-icon">🎮</div>
+              <div class="node-title">Controllers</div>
+              <div class="node-desc">Path Follow</div>
+            </a>
+            <a href="modules/bt.html" class="module-node nav">
+              <div class="node-icon">🌳</div>
+              <div class="node-title">Behavior Trees</div>
+              <div class="node-desc">Logic</div>
+            </a>
+            <a href="modules/recovery.html" class="module-node nav">
+              <div class="node-icon">🔄</div>
+              <div class="node-title">Recovery</div>
+              <div class="node-desc">Failure Handling</div>
+            </a>
+          </div>
+
+          <!-- Column 4: Ops & Quality -->
+          <div class="graph-column">
+            <div class="graph-column-title">Ops & Quality</div>
+            <a href="modules/build.html" class="module-node ops">
+              <div class="node-icon">🔨</div>
+              <div class="node-title">Build</div>
+              <div class="node-desc">Colcon</div>
+            </a>
+            <a href="modules/testing.html" class="module-node ops">
+              <div class="node-icon">✅</div>
+              <div class="node-title">Testing</div>
+              <div class="node-desc">Unit & Integration</div>
+            </a>
+            <a href="modules/diagnostics.html" class="module-node ops">
+              <div class="node-icon">🩺</div>
+              <div class="node-title">Diagnostics</div>
+              <div class="node-desc">Health Monitor</div>
+            </a>
+            <a href="modules/dds.html" class="module-node ops">
+              <div class="node-icon">🔗</div>
+              <div class="node-title">DDS</div>
+              <div class="node-desc">Discovery</div>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Start Training Loop -->
+      <section class="quick-start">
+        <h2>⚡ Daily Training Loop</h2>
+        <p>Dedicate <strong>one focused hour</strong> each day. Follow this proven loop for every concept:</p>
+        <div class="training-loop">
+          <div class="training-step">
+            <div class="step-number">1</div>
+            <div class="step-title">C++ Drill</div>
+            <div class="step-desc">Fill skeleton, compile, run</div>
+          </div>
+          <div class="training-step">
+            <div class="step-number">2</div>
+            <div class="step-title">Python Drill</div>
+            <div class="step-desc">Fill skeleton, execute</div>
+          </div>
+          <div class="training-step">
+            <div class="step-number">3</div>
+            <div class="step-title">ROS2 Action</div>
+            <div class="step-desc">Launch & verify nodes</div>
+          </div>
+          <div class="training-step">
+            <div class="step-number">4</div>
+            <div class="step-title">CLI Verify</div>
+            <div class="step-desc">Check topics/services</div>
+          </div>
+          <div class="training-step">
+            <div class="step-number">5</div>
+            <div class="step-title">Debug Rep</div>
+            <div class="step-desc">Break, detect, fix</div>
+          </div>
+        </div>
+        <p style="margin-top: 1.5rem; text-align: center; color: var(--muted);">Keep a terminal and RViz open side by side. Replace stub code as you progress.</p>
+      </section>
+
+      <section>
+        <h2>📚 20-Day Mastery Roadmap</h2>
+        <p style="margin-bottom: 2rem; color: var(--muted);">Follow this daily progression to build real capability. Each day builds on the previous:</p>
+        <div class="card-grid">
+          <div class="card">
+            <h3>📅 Day 1-7: ROS2 Foundations</h3>
+            <p>Master pub/sub, services, actions, params, launch files, QoS, and lifecycle nodes</p>
+          </div>
+          <div class="card">
+            <h3>📅 Day 8-11: Robot Modeling</h3>
+            <p>Learn TF transforms, URDF models, Gazebo simulation, and bag recording</p>
+          </div>
+          <div class="card">
+            <h3>📅 Day 12-14: SLAM & Localization</h3>
+            <p>Build maps with SLAM Toolbox, localize with AMCL, bringup Nav2 stack</p>
+          </div>
+          <div class="card">
+            <h3>📅 Day 15-20: Advanced Navigation</h3>
+            <p>Tune costmaps, configure planners/controllers, customize behavior trees, master recovery</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>🎯 Your Journey Starts Here</h2>
+        <div style="background: var(--panel); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2rem; margin: 2rem 0;">
+          <ul class="checklist">
+            <li><strong>Week 1 (Days 1-7):</strong> Master Core ROS2 - Pub/Sub, Services, Actions, Parameters, Launch, QoS, Lifecycle</li>
+            <li><strong>Week 2 (Days 8-14):</strong> Robot Modeling & Navigation Setup - TF, URDF, Gazebo, Bags, SLAM, AMCL, Nav2</li>
+            <li><strong>Week 3 (Days 15-20):</strong> Advanced Navigation - Costmaps, Planners, Controllers, Behavior Trees, Recovery</li>
+            <li><strong>Every Day:</strong> One focused hour. Real code. Real progress. No shortcuts.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section>
+        <h2>🛠️ Essential Commands</h2>
+        <div class="card-grid" style="margin-top: 2rem;">
+          <div class="card">
+            <h3>📦 Package Creation</h3>
+            <pre><code class="bash"># C++ package
+ros2 pkg create my_robot_cpp \
+  --build-type ament_cmake \
+  --dependencies rclcpp std_msgs
+
+# Python package
+ros2 pkg create my_robot_py \
+  --build-type ament_python \
+  --dependencies rclpy std_msgs</code></pre>
+          </div>
+
+          <div class="card">
+            <h3>🔨 Build Commands</h3>
+            <pre><code class="bash"># Build all packages
+colcon build --symlink-install
+
+# Build specific package
+colcon build --packages-select my_robot
+
+# Source the workspace
+source install/setup.bash</code></pre>
+          </div>
+
+          <div class="card">
+            <h3>🔍 Introspection</h3>
+            <pre><code class="bash"># Topics
+ros2 topic list
+ros2 topic echo /chatter
+
+# Services
+ros2 service list
+
+# Actions
+ros2 action list
+
+# Parameters
+ros2 param list
+
+# Nodes
+ros2 node info /my_node</code></pre>
+          </div>
+
+          <div class="card">
+            <h3>📊 Visualization</h3>
+            <pre><code class="bash"># TF frames
+ros2 run tf2_tools view_frames
+
+# Node graph
+rqt_graph
+
+# RViz2
+ros2 run rviz2 rviz2
+
+# Gazebo
+ros2 launch gazebo_ros gazebo.launch.py</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <div class="callout callout-tip" style="margin-top: 3rem;">
+        <strong>💡 Pro Tips for Maximum Progress:</strong>
+        <p>✓ Keep terminal and RViz side by side • ✓ Use tmux for multi-pane workflows • ✓ Source workspace in every new terminal • ✓ Commit working code daily • ✓ Break things intentionally to learn debugging</p>
+      </div>
+
+      <div class="callout callout-note" style="margin-top: 1rem;">
+        <strong>🎓 Learning Philosophy:</strong>
+        <p>This is <em>deliberate practice</em>, not passive reading. You'll write code, break it, fix it, and repeat. Every module has C++ and Python examples. Every concept has hands-on verification steps. Master one concept fully before moving to the next.</p>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+        document.body.classList.add('sidebar-open');
+      } else {
+        document.body.classList.remove('sidebar-open');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      if (window.innerWidth > 968) {
+        // Desktop: toggle body class to shift layout
+        if (isActive) {
+          document.body.classList.add('sidebar-open');
+        } else {
+          document.body.classList.remove('sidebar-open');
+        }
+      } else {
+        // Mobile overlay behavior
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure state matches body class
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          document.body.classList.add('sidebar-open');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: reset desktop state
+          document.body.classList.remove('sidebar-open');
+          if (sidebar.classList.contains('active')) {
+            // keep active visual until user toggles
+            sidebarOverlay.classList.add('active');
+          }
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build System - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html" class="active">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#ops">Ops &amp; Quality</a> &gt; Build System
+      </nav>
+
+      <h1 class="page-title">Build System (Colcon)</h1>
+      <p class="page-outcome">Master ROS2's build tool, package structure, and dependency management.</p>
+
+      <div class="pills">
+        <span class="pill pill-build">Colcon</span>
+        <span class="pill pill-cmake">CMake</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Colcon is ROS2's build tool, succeeding catkin from ROS1. It builds workspace packages independently with correct dependency order. Each package has <code>package.xml</code> (declares dependencies, metadata) and build files (<code>CMakeLists.txt</code> for C++, <code>setup.py</code> for Python). Colcon supports ament_cmake (C++), ament_python (Python), and cmake (plain CMake). Workspace structure: <code>src/</code> (source), <code>build/</code> (intermediates), <code>install/</code> (final binaries), <code>log/</code> (build logs). Colcon provides parallel builds, symlink installs (fast iteration), and isolated builds (prevent cross-contamination).</p>
+
+        <h3>Why</h3>
+        <p>Manual compilation of multi-package workspaces is error-prone - dependency order matters. Colcon automates topological sorting: builds dependencies first. Incremental builds are fast - only modified packages rebuild. <code>--symlink-install</code> avoids copying Python files, enabling instant code changes. Colcon's isolation prevents "it works on my machine" issues - each package builds in clean environment. Build flags propagate correctly (e.g., <code>CMAKE_BUILD_TYPE</code>). Colcon integrates with CI/CD for reproducible builds.</p>
+
+        <h3>When</h3>
+        <p>Use <code>colcon build</code> for all multi-package workspaces. Single packages can use <code>colcon build --packages-select my_pkg</code>. Use <code>--symlink-install</code> for Python development (no reinstall needed). Build types: Debug (symbols, no optimization) for development, Release (optimized) for production, RelWithDebInfo (optimized + symbols) for profiling. Clean builds (<code>rm -rf build install</code>) resolve mysterious errors. Always source <code>install/setup.bash</code> after building to update environment.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Basic Workspace Structure</h3>
+        <pre><code class="bash"># Create workspace
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws
+
+# Create package (C++)
+cd src
+ros2 pkg create my_robot_pkg \
+  --build-type ament_cmake \
+  --dependencies rclcpp std_msgs geometry_msgs
+
+# Create package (Python)
+ros2 pkg create my_py_pkg \
+  --build-type ____  \  # ament_python
+  --dependencies rclpy std_msgs
+
+# Workspace structure
+# ros2_ws/
+#   src/
+#     my_robot_pkg/
+#       CMakeLists.txt
+#       package.xml
+#       include/
+#       src/
+#     my_py_pkg/
+#       package.xml
+#       setup.py
+#       my_py_pkg/</code></pre>
+
+        <h3>Essential Colcon Commands</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Purpose</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>colcon build</code></td>
+              <td>Build all packages</td>
+              <td>Fresh workspace, full rebuild</td>
+            </tr>
+            <tr>
+              <td><code>colcon build --packages-select my_pkg</code></td>
+              <td>Build one package</td>
+              <td>Fast iteration on single package</td>
+            </tr>
+            <tr>
+              <td><code>colcon build --symlink-install</code></td>
+              <td>Symlink Python files</td>
+              <td>Python dev (no reinstall needed)</td>
+            </tr>
+            <tr>
+              <td><code>colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release</code></td>
+              <td>Optimized build</td>
+              <td>Production deployment</td>
+            </tr>
+            <tr>
+              <td><code>colcon test</code></td>
+              <td>Run all tests</td>
+              <td>CI/CD verification</td>
+            </tr>
+            <tr>
+              <td><code>colcon test-result --verbose</code></td>
+              <td>Show test output</td>
+              <td>Debug test failures</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Package.xml Structure</h3>
+        <pre><code class="xml">&lt;?xml version="1.0"?&gt;
+&lt;package format="3"&gt;
+  &lt;name&gt;my_robot_pkg&lt;/name&gt;
+  &lt;version&gt;0.1.0&lt;/version&gt;
+  &lt;description&gt;My robot navigation package&lt;/description&gt;
+  &lt;maintainer email="you@example.com"&gt;Your Name&lt;/maintainer&gt;
+  &lt;license&gt;Apache-2.0&lt;/license&gt;
+
+  &lt;!-- Build tool --&gt;
+  &lt;buildtool_depend&gt;____&lt;/buildtool_depend&gt;  &lt;!-- ament_cmake --&gt;
+
+  &lt;!-- Build and runtime dependencies --&gt;
+  &lt;depend&gt;rclcpp&lt;/depend&gt;
+  &lt;depend&gt;std_msgs&lt;/depend&gt;
+  &lt;depend&gt;geometry_msgs&lt;/depend&gt;
+
+  &lt;!-- Build-only dependencies --&gt;
+  &lt;build_depend&gt;rosidl_default_generators&lt;/build_depend&gt;
+  
+  &lt;!-- Runtime-only dependencies --&gt;
+  &lt;exec_depend&gt;rosidl_default_runtime&lt;/exec_depend&gt;
+
+  &lt;!-- Test dependencies --&gt;
+  &lt;test_depend&gt;ament_lint_auto&lt;/test_depend&gt;
+  &lt;test_depend&gt;ament_lint_common&lt;/test_depend&gt;
+
+  &lt;export&gt;
+    &lt;build_type&gt;ament_cmake&lt;/build_type&gt;
+  &lt;/export&gt;
+&lt;/package&gt;</code></pre>
+
+        <h3>CMakeLists.txt (ament_cmake)</h3>
+        <pre><code class="cmake">cmake_minimum_required(VERSION 3.8)
+project(my_robot_pkg)
+
+# Compiler settings
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# Find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+
+# Add executable
+add_executable(my_node src/my_node.cpp)
+ament_target_dependencies(my_node
+  rclcpp
+  std_msgs
+  ____  # geometry_msgs
+)
+
+# Install executable
+install(TARGETS my_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install launch files
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+# Install config files
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME}
+)
+
+# Testing
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_package()</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Build Process)</h2>
+
+        <h3>Colcon Build Workflow</h3>
+        <pre><code class="bash"># 1. Dependency resolution
+# Colcon reads package.xml in src/
+# Builds topological sort: if pkg_b depends on pkg_a, build pkg_a first
+
+# 2. Configure phase (CMake)
+# Creates build/my_pkg/
+# Runs: cmake -DCMAKE_INSTALL_PREFIX=install ...
+
+# 3. Build phase
+# Compiles C++ code: make -j$(nproc)
+# Or for Python: copies files
+
+# 4. Install phase
+# Copies binaries to install/my_pkg/lib/
+# Copies headers to install/my_pkg/include/
+# Copies config/launch to install/my_pkg/share/
+
+# 5. Environment setup
+# Creates install/setup.bash with:
+# - PATH: adds install/my_pkg/lib/my_pkg
+# - LD_LIBRARY_PATH: adds install/my_pkg/lib
+# - AMENT_PREFIX_PATH: adds install/my_pkg</code></pre>
+
+        <h3>Custom CMake Targets</h3>
+        <pre><code class="cmake"># Add library (for reusable code)
+add_library(my_lib src/my_library.cpp)
+ament_target_dependencies(my_lib rclcpp)
+
+# Link executable to library
+add_executable(my_node src/my_node.cpp)
+target_link_libraries(my_node ____)  # my_lib
+
+# Install library and headers
+install(TARGETS my_lib
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+# Export library for other packages
+ament_export_targets(export_my_lib HAS_LIBRARY_TARGET)
+install(TARGETS my_lib
+  EXPORT export_my_lib
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+)</code></pre>
+
+        <h3>Python Setup.py (ament_python)</h3>
+        <pre><code class="python">from setuptools import setup
+
+package_name = 'my_py_pkg'
+
+setup(
+    name=package_name,
+    version='0.1.0',
+    packages=[package_name],
+    data_files=[
+        # Install package.xml
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+        
+        # Install launch files
+        ('share/' + package_name + '/launch',
+            ['launch/my_launch.py']),
+        
+        # Install config files
+        ('share/' + package_name + '/config',
+            ['____/my_config.yaml']),  # config
+    ],
+    install_requires=['setuptools'],
+    zip_safe=True,
+    maintainer='Your Name',
+    maintainer_email='you@example.com',
+    description='My Python package',
+    license='Apache-2.0',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            'my_node = my_py_pkg.my_node:main',
+        ],
+    },
+)</code></pre>
+
+        <h3>Custom Message/Service Build</h3>
+        <pre><code class="cmake"># In CMakeLists.txt
+find_package(rosidl_default_generators REQUIRED)
+
+# Define custom messages
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/CustomMsg.msg"
+  "srv/CustomSrv.srv"
+  "action/CustomAction.action"
+  DEPENDENCIES std_msgs geometry_msgs
+)
+
+# Use custom messages in same package
+rosidl_get_typesupport_target(cpp_typesupport_target
+  ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+target_link_libraries(my_node "${cpp_typesupport_target}")</code></pre>
+
+        <pre><code class="xml">&lt;!-- In package.xml --&gt;
+&lt;build_depend&gt;rosidl_default_generators&lt;/build_depend&gt;
+&lt;exec_depend&gt;____&lt;/exec_depend&gt;  &lt;!-- rosidl_default_runtime --&gt;
+&lt;member_of_group&gt;rosidl_interface_packages&lt;/member_of_group&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Build Type Selection</h3>
+        <pre><code class="bash"># Debug build (default): no optimization, debug symbols
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug
+
+# Release build: full optimization, no symbols
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=____  # Release
+
+# RelWithDebInfo: optimization + symbols (for profiling)
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+# Check current build type
+cat build/my_pkg/CMakeCache.txt | grep CMAKE_BUILD_TYPE</code></pre>
+
+        <h3>Parallel Build Control</h3>
+        <pre><code class="bash"># Limit parallel jobs (reduce RAM usage)
+colcon build --parallel-workers 2
+
+# Or set environment variable
+export MAKEFLAGS="-j2"
+colcon build
+
+# Default: uses all CPU cores $(nproc)</code></pre>
+
+        <h3>Selective Building</h3>
+        <pre><code class="bash"># Build single package
+colcon build --packages-select my_pkg
+
+# Build package and dependencies
+colcon build --packages-up-to my_pkg
+
+# Skip specific packages
+colcon build --packages-skip test_pkg
+
+# Continue on error (build as many as possible)
+colcon build --continue-on-error</code></pre>
+
+        <h3>Colcon Defaults File</h3>
+        <pre><code class="bash"># Save default arguments: ~/.colcon/defaults.yaml
+build:
+  symlink-install: true
+  cmake-args:
+    - "-DCMAKE_BUILD_TYPE=____"  # RelWithDebInfo
+  parallel-workers: 4
+
+test:
+  pytest-with-coverage: true</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Build Verification</h3>
+        <pre><code class="bash"># Check build succeeded
+echo $?
+# Expected: 0 (success)
+
+# Verify executable installed
+ls install/my_pkg/lib/my_pkg/
+# Should see: my_node
+
+# Verify shared libraries
+ls install/my_pkg/lib/*.so
+# Should see: libmy_lib.so
+
+# Check if package visible to ROS2
+source install/setup.bash
+ros2 pkg list | grep my_pkg
+# Should see: my_pkg
+
+# Run installed executable
+ros2 run my_pkg my_node
+# Should start without errors</code></pre>
+
+        <h3>Build Logs</h3>
+        <pre><code class="bash"># Check build logs
+cat log/latest_build/my_pkg/stdout.log
+cat log/latest_build/my_pkg/stderr.log
+
+# Find all errors in workspace
+grep -r "error:" log/latest_build/
+
+# Check warnings
+grep -r "warning:" log/latest_build/ | wc -l</code></pre>
+
+        <h3>Dependency Verification</h3>
+        <pre><code class="bash"># List package dependencies
+colcon list --packages-select my_pkg
+
+# Check if dependencies met
+rosdep check --from-paths src --ignore-src
+
+# Install missing dependencies
+rosdep install --from-paths src --ignore-src -y</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use <code>colcon build --event-handlers console_direct+</code> for immediate output during build. Helpful for debugging stuck builds or seeing progress in real-time.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Package Not Found</h3>
+        <p><strong>Symptom:</strong> <code>CMake Error: Could not find a package configuration file provided by "xxx"</code></p>
+        <p><strong>Root Cause:</strong> Missing dependency or dependency not in workspace.</p>
+        <p><strong>Fix:</strong> Install dependency or build it:</p>
+        <pre><code class="bash"># Check if system package available
+apt search ros-humble-xxx
+
+# Install if available
+sudo apt install ros-humble-____  # package-name
+
+# Or add to package.xml
+&lt;depend&gt;xxx&lt;/depend&gt;
+
+# And rebuild
+colcon build --packages-select my_pkg</code></pre>
+
+        <h3>Failure 2: Undefined Reference (Linker Error)</h3>
+        <p><strong>Symptom:</strong> <code>undefined reference to 'MyClass::myFunction()'</code></p>
+        <p><strong>Root Cause:</strong> Missing library link in CMakeLists.txt.</p>
+        <p><strong>Fix:</strong> Link library:</p>
+        <pre><code class="cmake"># If using external library
+find_package(my_lib REQUIRED)
+ament_target_dependencies(my_node my_lib)
+
+# If using library in same package
+target_link_libraries(my_node ____)  # my_internal_lib</code></pre>
+
+        <h3>Failure 3: Python Module Not Found</h3>
+        <p><strong>Symptom:</strong> <code>ModuleNotFoundError: No module named 'my_py_pkg'</code></p>
+        <p><strong>Root Cause:</strong> Forgot to source workspace or missing <code>--symlink-install</code>.</p>
+        <p><strong>Fix:</strong> Source and rebuild with symlink:</p>
+        <pre><code class="bash"># Rebuild with symlink
+colcon build --symlink-install --packages-select my_py_pkg
+
+# Source workspace
+source install/setup.bash
+
+# Verify package visible
+python3 -c "import my_py_pkg"
+# No error = success</code></pre>
+
+        <h3>Failure 4: Old Build Artifacts</h3>
+        <p><strong>Symptom:</strong> Mysterious build errors, CMake finds wrong files.</p>
+        <p><strong>Root Cause:</strong> Stale build/install directories.</p>
+        <p><strong>Fix:</strong> Clean rebuild:</p>
+        <pre><code class="bash"># Remove build artifacts
+rm -rf build/ install/ log/
+
+# Fresh build
+colcon build</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Missing Dependency</h3>
+        <p>Remove dependency from CMakeLists.txt but keep code using it:</p>
+
+        <pre><code class="cmake"># CMakeLists.txt - intentional error
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+# find_package(geometry_msgs REQUIRED)  &lt;!-- COMMENTED OUT --&gt;
+
+add_executable(my_node src/my_node.cpp)
+ament_target_dependencies(my_node
+  rclcpp
+  # geometry_msgs  &lt;!-- MISSING --&gt;
+)</code></pre>
+
+        <pre><code class="cpp">// src/my_node.cpp - uses geometry_msgs
+#include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/twist.hpp"  // WILL FAIL
+
+int main() {
+    geometry_msgs::msg::Twist cmd;  // Error: type not found
+    return 0;
+}</code></pre>
+
+        <p><strong>Observe:</strong></p>
+        <pre><code class="bash">colcon build --packages-select my_pkg
+# Error: 'geometry_msgs/msg/twist.hpp' file not found
+# Or: 'geometry_msgs' is not a member of...
+
+# Build fails at compile time</code></pre>
+
+        <p><strong>Detection:</strong> Check stderr log:</p>
+        <pre><code class="bash">cat log/latest_build/my_pkg/stderr.log
+# Shows missing header file</code></pre>
+
+        <p><strong>Recovery:</strong></p>
+        <pre><code class="cmake"># Add missing dependency
+find_package(geometry_msgs REQUIRED)
+ament_target_dependencies(my_node rclcpp ____) # geometry_msgs</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Always keep package.xml and CMakeLists.txt in sync. Dependency in code must be in both files: <code>&lt;depend&gt;</code> in package.xml AND <code>find_package()</code> in CMakeLists.txt.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Master advanced build systems:</p>
+
+        <ol>
+          <li>Create multi-package workspace with complex dependency graph (10+ packages)</li>
+          <li>Build custom ament_cmake scripts for code generation (protobuf, custom DSL)</li>
+          <li>Implement cross-compilation for ARM targets (Raspberry Pi, Jetson)</li>
+          <li>Set up Docker-based reproducible builds with layer caching</li>
+          <li>Create colcon mixin for project-specific build flags</li>
+          <li>Build custom ROS2 package installer (like apt but for internal packages)</li>
+          <li>Implement incremental build optimization (ccache, distcc for distributed builds)</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="testing.html">Testing</a> - Next: Unit and integration tests</li>
+          <li><a href="launch.html">Launch Files</a> - Installing launch configurations</li>
+          <li><a href="params.html">Parameters</a> - Installing config YAML files</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Colcon docs: <code>colcon.readthedocs.io</code></p>
+          <p>ament_cmake guide: <code>docs.ros.org/en/humble/How-To-Guides/Ament-CMake-Documentation.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="recovery.html" class="prev">Recovery Behaviors</a>
+        <a href="testing.html" class="next">Testing</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

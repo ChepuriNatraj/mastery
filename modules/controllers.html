@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controllers - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html" class="active">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#slam">SLAM &amp; Nav2</a> &gt; Controllers
+      </nav>
+
+      <h1 class="page-title">Controllers</h1>
+      <p class="page-outcome">Track global paths with dynamic obstacle avoidance and smooth velocity commands.</p>
+
+      <div class="pills">
+        <span class="pill pill-nav2">Nav2</span>
+        <span class="pill pill-control">Control</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Controllers (local planners) compute cmd_vel commands to follow global path while avoiding dynamic obstacles. Nav2 provides DWB (Dynamic Window Approach), RPP (Regulated Pure Pursuit), and TEB (Timed Elastic Band) controllers. Controllers run at high frequency (20-50 Hz), use local costmap for real-time obstacle detection, and generate short-horizon trajectories. Each controller scores candidate velocities based on path alignment, obstacle clearance, and goal progress. Best trajectory is selected and corresponding velocity is published. Support features: velocity smoothing, oscillation detection, and path pruning.</p>
+
+        <h3>Why</h3>
+        <p>Global paths are collision-free at planning time but don't handle dynamic obstacles (people, other robots). Controllers provide reactive obstacle avoidance by continuously replanning local trajectories. They also handle robot dynamics - smoothing accelerations and respecting velocity/acceleration limits. Different controllers suit different robot types: DWB for differential drive, RPP for car-like robots, TEB for minimum-time trajectories. Controllers are critical for safe, smooth navigation - poor tuning causes oscillations, getting stuck, or collisions.</p>
+
+        <h3>When</h3>
+        <p>Use DWB for general differential drive robots - it's well-tested and configurable. Use RPP for ackermann steering or when simple, smooth following is sufficient. Use TEB when minimum-time trajectories are critical (warehouse robots). Controller choice affects CPU usage: DWB ~5-10% CPU, TEB ~15-25%. Always tune controller gains empirically - simulate in Gazebo first, then test on hardware. Monitor cmd_vel output - sudden velocity changes indicate tuning issues.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Configure Controller Server</h3>
+        <p>Set up DWB controller:</p>
+        <pre><code class="yaml"># nav2_params.yaml
+controller_server:
+  ros__parameters:
+    use_sim_time: true
+    controller_frequency: ____  # 20.0 Hz
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.5
+    min_theta_velocity_threshold: 0.001
+    
+    # Progress checker
+    progress_checker_plugin: "progress_checker"
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: ____  # 0.5 meters
+      movement_time_allowance: 10.0  # seconds
+    
+    # Goal checker
+    goal_checker_plugin: "goal_checker"
+    goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25
+      yaw_goal_tolerance: ____  # 0.25 radians
+      stateful: true
+    
+    # Controller plugin
+    controller_plugins: ["FollowPath"]
+    
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner"
+      
+      # Velocity limits
+      min_vel_x: 0.0
+      max_vel_x: ____  # 0.5 m/s
+      min_vel_y: 0.0
+      max_vel_y: 0.0  # Differential drive (no lateral)
+      max_vel_theta: 1.0  # rad/s
+      min_speed_xy: -1.0  # Allow stopping
+      max_speed_xy: 0.5
+      min_speed_theta: 0.0
+      
+      # Acceleration limits
+      acc_lim_x: 2.5
+      acc_lim_y: 0.0
+      acc_lim_theta: ____  # 3.2 rad/s²
+      decel_lim_x: -2.5
+      decel_lim_y: 0.0
+      decel_lim_theta: -3.2
+      
+      # DWB parameters
+      vx_samples: 20
+      vy_samples: 0
+      vtheta_samples: 40
+      
+      # Trajectory simulation
+      sim_time: 1.7  # seconds
+      discretize_by_time: false
+      time_granularity: ____  # 0.5 seconds
+      
+      # Critics (scoring functions)
+      critics: [
+        "RotateToGoal",
+        "Oscillation", 
+        "BaseObstacle",
+        "GoalAlign",
+        "PathAlign",
+        "PathDist",
+        "GoalDist"
+      ]
+      
+      # Critic weights
+      PathAlign.scale: 32.0
+      GoalAlign.scale: 24.0
+      PathDist.scale: 32.0
+      GoalDist.scale: ____  # 24.0
+      RotateToGoal.scale: 32.0
+      
+      # Obstacle avoidance
+      BaseObstacle.scale: 0.02
+      BaseObstacle.sum_scores: false</code></pre>
+
+        <h3>RPP Controller Alternative</h3>
+        <p>Regulated Pure Pursuit for smoother following:</p>
+        <pre><code class="yaml">controller_server:
+  ros__parameters:
+    FollowPath:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      
+      # Lookahead distance
+      desired_linear_vel: 0.5
+      lookahead_dist: ____  # 0.6 meters
+      min_lookahead_dist: 0.3
+      max_lookahead_dist: 0.9
+      
+      # Regulation (slowdown)
+      use_velocity_scaled_lookahead_dist: true
+      regulated_linear_scaling_min_radius: 0.9
+      
+      # Collision checking
+      use_collision_detection: true
+      use_cost_regulated_linear_velocity_scaling: ____  # true
+      cost_scaling_dist: 0.6
+      cost_scaling_gain: 1.0
+      inflation_cost_scaling_factor: 3.0
+      
+      # Rotation
+      use_rotate_to_heading: true
+      rotate_to_heading_min_angle: 0.785  # 45 degrees
+      max_angular_accel: 3.2</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (DWB Algorithm)</h2>
+
+        <h3>Dynamic Window Approach</h3>
+        <pre><code class="python"># Conceptual DWB algorithm
+def dwb_control(current_vel, goal, obstacles, path):
+    # 1. Generate velocity samples within dynamic window
+    candidates = []
+    for vx in linspace(min_vx, max_vx, vx_samples):
+        for vtheta in linspace(min_vtheta, max_vtheta, vtheta_samples):
+            # Check if velocity is achievable given acceleration limits
+            if is_reachable(current_vel, (vx, vtheta), acc_limits, dt):
+                candidates.append((vx, vtheta))
+    
+    # 2. Simulate trajectory for each candidate
+    trajectories = []
+    for vel in candidates:
+        traj = simulate_trajectory(vel, sim_time)
+        
+        # Check collision
+        if not check_collision(traj, obstacles):
+            continue  # Skip unsafe trajectories
+        
+        trajectories.append((vel, traj))
+    
+    # 3. Score each trajectory with critics
+    best_vel = None
+    best_score = -inf
+    
+    for vel, traj in trajectories:
+        score = 0
+        score += path_align_critic(traj, path) * ____  # path_align_weight
+        score += goal_dist_critic(traj, goal) * goal_dist_weight
+        score += obstacle_critic(traj, obstacles) * obstacle_weight
+        score -= oscillation_penalty(vel, prev_vel)
+        
+        if score > best_score:
+            best_score = score
+            best_vel = vel
+    
+    # 4. Publish best velocity
+    return best_vel  # (vx, vy, vtheta)</code></pre>
+
+        <h3>Controller Comparison</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Controller</th>
+              <th>Approach</th>
+              <th>CPU</th>
+              <th>Smoothness</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>DWB</code></td>
+              <td>Sample velocities, score trajectories</td>
+              <td>Medium</td>
+              <td>Good with tuning</td>
+              <td>General differential drive</td>
+            </tr>
+            <tr>
+              <td><code>RPP</code></td>
+              <td>Pure pursuit with regulation</td>
+              <td>Low</td>
+              <td>Very smooth</td>
+              <td>Ackermann, simple paths</td>
+            </tr>
+            <tr>
+              <td><code>TEB</code></td>
+              <td>Elastic band optimization</td>
+              <td>High</td>
+              <td>Optimal but jerky</td>
+              <td>Minimum-time trajectories</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>DWB Critics Explained</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Critic</th>
+              <th>Purpose</th>
+              <th>Increase Weight When</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>PathAlign</code></td>
+              <td>Keep heading aligned with path</td>
+              <td>Robot cuts corners</td>
+            </tr>
+            <tr>
+              <td><code>PathDist</code></td>
+              <td>Stay close to global path</td>
+              <td>Robot deviates from path</td>
+            </tr>
+            <tr>
+              <td><code>GoalAlign</code></td>
+              <td>Point toward goal</td>
+              <td>Robot approaches at wrong angle</td>
+            </tr>
+            <tr>
+              <td><code>GoalDist</code></td>
+              <td>Prefer progress toward goal</td>
+              <td>Robot stops short of goal</td>
+            </tr>
+            <tr>
+              <td><code>BaseObstacle</code></td>
+              <td>Avoid obstacles</td>
+              <td>Robot gets too close to walls</td>
+            </tr>
+            <tr>
+              <td><code>Oscillation</code></td>
+              <td>Penalize velocity reversals</td>
+              <td>Robot wobbles back/forth</td>
+            </tr>
+            <tr>
+              <td><code>RotateToGoal</code></td>
+              <td>Rotate in place near goal</td>
+              <td>Need precise final orientation</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Custom Controller Plugin</h3>
+        <pre><code class="cpp">// my_controller.hpp
+#include "nav2_core/controller.hpp"
+
+namespace my_controller {
+
+class MyController : public nav2_core::Controller {
+public:
+    void configure(
+        const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+        std::string name,
+        std::shared_ptr<tf2_ros::Buffer> tf,
+        std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override {
+        
+        node_ = parent.lock();
+        costmap_ros_ = costmap_ros;
+        
+        node_->declare_parameter(name + ".desired_linear_vel", 0.5);
+    }
+    
+    geometry_msgs::msg::TwistStamped computeVelocityCommands(
+        const geometry_msgs::msg::PoseStamped & pose,
+        const geometry_msgs::msg::Twist & velocity,
+        nav2_core::GoalChecker * goal_checker) override {
+        
+        // Get current path
+        auto path = getPlan();
+        
+        // Your control algorithm
+        geometry_msgs::msg::TwistStamped cmd_vel;
+        cmd_vel.header.stamp = node_->now();
+        cmd_vel.header.frame_id = "base_link";
+        
+        // Compute velocities to follow path
+        cmd_vel.twist.linear.x = ____;  // compute_linear_velocity()
+        cmd_vel.twist.angular.z = compute_angular_velocity();
+        
+        return cmd_vel;
+    }
+    
+    void setPlan(const nav_msgs::msg::Path & path) override {
+        global_plan_ = path;
+    }
+};
+
+} // namespace</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Velocity Limits Tuning</h3>
+        <pre><code class="yaml"># Start conservative, increase gradually
+max_vel_x: 0.3  # Start slow
+max_vel_theta: 0.5
+
+# Test: Send short navigation goals
+# If robot navigates safely, increase:
+max_vel_x: 0.5
+max_vel_theta: 1.0
+
+# For fast robots (>1 m/s):
+max_vel_x: ____  # 1.5
+max_vel_theta: 2.0
+sim_time: 2.5  # Increase lookahead</code></pre>
+
+        <h3>Obstacle Avoidance Tuning</h3>
+        <pre><code class="yaml"># Robot too cautious (stops far from obstacles):
+BaseObstacle.scale: 0.01  # Reduce from 0.02
+
+# Robot hits obstacles:
+BaseObstacle.scale: ____  # 0.05 (increase)
+# AND check costmap inflation:
+inflation_radius: 0.6  # Increase safety margin</code></pre>
+
+        <h3>Path Following Tuning</h3>
+        <pre><code class="yaml"># Robot cuts corners:
+PathAlign.scale: 48.0  # Increase from 32.0
+PathDist.scale: 48.0
+
+# Robot too rigid, won't deviate for obstacles:
+PathAlign.scale: 16.0  # Decrease
+PathDist.scale: ____  # 16.0</code></pre>
+
+        <h3>Goal Tolerance</h3>
+        <pre><code class="yaml"># Precise docking:
+goal_checker:
+  xy_goal_tolerance: 0.1  # 10cm
+  yaw_goal_tolerance: 0.1  # ~6 degrees
+  
+# Loose waypoints:
+goal_checker:
+  xy_goal_tolerance: ____  # 0.5 meter
+  yaw_goal_tolerance: 0.5  # ~29 degrees</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Verify controller running
+ros2 node list | grep controller
+# Expected: /controller_server
+
+# Monitor cmd_vel output
+ros2 topic echo /cmd_vel
+# Expected: Smooth velocity commands, no sudden jumps
+
+# Check controller frequency
+ros2 topic hz /cmd_vel
+# Expected: ~20 Hz (matches controller_frequency)
+
+# Send test goal and watch behavior
+ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
+  "{pose: {header: {frame_id: 'map'}, pose: {position: {x: 5.0, y: 3.0}}}}"
+
+# Monitor for oscillations
+ros2 topic echo /cmd_vel | grep linear.x
+# Values should be stable, not flipping +/- rapidly
+
+# Test obstacle avoidance: Place object in path
+# Controller should slow down, navigate around</code></pre>
+
+        <h3>Tuning Workflow</h3>
+        <pre><code class="bash"># 1. Test in empty space first
+# Send goals, verify robot moves smoothly
+
+# 2. Add single obstacle
+# Verify robot avoids it
+
+# 3. Add narrow passages
+# Tune critic weights if robot gets stuck
+
+# 4. Test dynamic obstacles (person walking)
+# Controller should react and replan
+
+# 5. Measure performance
+ros2 topic echo /navigate_to_pose/_action/feedback
+# Check: distance_remaining, estimated_time_remaining</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use <code>rqt_reconfigure</code> to tune DWB parameters live without restarting. Change critic weights and see immediate effect on behavior.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Robot Oscillates Near Goal</h3>
+        <p><strong>Symptom:</strong> Robot moves forward/backward repeatedly, never reaching goal.</p>
+        <p><strong>Root Cause:</strong> Goal tolerance too tight or conflicting critic weights.</p>
+        <p><strong>Fix:</strong> Relax tolerance and tune critics:</p>
+        <pre><code class="yaml"># Increase goal tolerance
+goal_checker:
+  xy_goal_tolerance: 0.3  # Was 0.1
+  stateful: ____  # true (latch xy goal once reached)
+
+# Reduce oscillation
+Oscillation.scale: 1.0  # Add if not present
+
+# Reduce goal approach precision
+RotateToGoal.slowing_factor: 3.0  # Slow down sooner</code></pre>
+
+        <h3>Failure 2: Robot Gets Stuck in Narrow Passage</h3>
+        <p><strong>Symptom:</strong> Controller aborts with "No valid trajectories" in doorways/corridors.</p>
+        <p><strong>Root Cause:</strong> All sampled velocities cause predicted collision.</p>
+        <p><strong>Fix:</strong> Increase trajectory resolution and reduce obstacle penalty:</p>
+        <pre><code class="yaml"># Finer trajectory simulation
+vx_samples: 30  # Was 20
+vtheta_samples: 60  # Was 40
+
+# Allow closer approach to obstacles
+BaseObstacle.scale: 0.01  # Was 0.02
+
+# Check costmap inflation (may be too large)
+inflation_radius: 0.4  # Reduce if robot fits with margin</code></pre>
+
+        <h3>Failure 3: Robot Ignores Dynamic Obstacles</h3>
+        <p><strong>Symptom:</strong> Robot collides with moving people/objects.</p>
+        <p><strong>Root Cause:</strong> Local costmap not updating fast enough or clearing too aggressively.</p>
+        <p><strong>Fix:</strong> Tune local costmap update rate:</p>
+        <pre><code class="yaml">local_costmap:
+  local_costmap:
+    update_frequency: 10.0  # Was 5.0 (update faster)
+    
+    obstacle_layer:
+      clearing: true
+      # Don't clear occupied cells immediately
+      min_obstacle_height: 0.1  # Ensure detecting obstacles
+      obstacle_max_range: 3.0  # See obstacles sooner
+
+# Increase obstacle critic weight
+BaseObstacle.scale: ____  # 0.05 (was 0.02)</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Disable Obstacle Critic and Observe</h3>
+        <p>Remove obstacle avoidance to see collision behavior:</p>
+
+        <pre><code class="yaml"># Modify nav2_params.yaml
+FollowPath:
+  critics: [
+    "RotateToGoal",
+    # "BaseObstacle",  # COMMENTED OUT
+    "GoalAlign",
+    "PathAlign",
+    "PathDist",
+    "GoalDist"
+  ]
+
+# Restart controller_server
+# ros2 lifecycle set /controller_server deactivate
+# ros2 lifecycle set /controller_server activate
+
+# Send navigation goal toward obstacle
+
+# Observe:
+# - Robot follows path exactly
+# - Doesn't react to obstacles in local costmap
+# - Collides if obstacle is on path
+# - No slowing down near walls</code></pre>
+
+        <p><strong>Detection:</strong> Monitor velocity commands:</p>
+        <pre><code class="bash">ros2 topic echo /cmd_vel
+# Without BaseObstacle critic:
+# - Velocities don't slow near obstacles
+# - cmd_vel matches max velocity even when close to walls
+
+# With BaseObstacle:
+# - Velocities reduce as obstacles get closer
+# - Smooth deceleration profile</code></pre>
+
+        <p><strong>Recovery:</strong> Re-enable critic:</p>
+        <pre><code class="yaml">critics: ["RotateToGoal", "____", "GoalAlign", ...]  # BaseObstacle
+BaseObstacle.scale: 0.02</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Controller sampling rates (vx_samples, vtheta_samples) directly impact CPU usage. Start with 20x40 samples. Only increase if controller can't find valid trajectories in complex environments.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build advanced controller features:</p>
+
+        <ol>
+          <li>Implement custom controller plugin using Model Predictive Control (MPC)</li>
+          <li>Add velocity profiling for smooth acceleration curves (jerk minimization)</li>
+          <li>Create multi-critic balancing with automatic weight tuning</li>
+          <li>Build social navigation layer (people-aware trajectory planning)</li>
+          <li>Implement time-optimal control for warehouse robots</li>
+          <li>Add path shortcutting for efficiency (cut corners when safe)</li>
+          <li>Create controller benchmarking tool (track following error, smoothness)</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="planners.html">Path Planners</a> - Generate paths for controller to follow</li>
+          <li><a href="costmaps.html">Costmaps</a> - Obstacle representation for avoidance</li>
+          <li><a href="bt.html">Behavior Trees</a> - Orchestrate controller with recovery</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - Integration overview</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official controller docs: <code>navigation.ros.org/configuration/packages/configuring-controller-server.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="planners.html" class="prev">Path Planners</a>
+        <a href="bt.html" class="next">Behavior Trees</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

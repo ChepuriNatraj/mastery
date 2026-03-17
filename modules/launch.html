@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Launch Files - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html" class="active">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#core">Core ROS2</a> &gt; Launch Files
+      </nav>
+
+      <h1 class="page-title">Launch Files</h1>
+      <p class="page-outcome">Orchestrate multi-node systems with remaps, namespaces, and parameters.</p>
+
+      <div class="pills">
+        <span class="pill pill-cpu">CPU-Light</span>
+        <span class="pill pill-required">Required</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Launch files start multiple nodes with coordinated configuration in a single command. ROS2 supports Python launch files (programmatic) and YAML launch files (declarative). They handle node startup, parameter loading, topic remapping, namespace assignment, and conditional execution. Launch files can include other launch files and pass arguments between them.</p>
+
+        <h3>Why</h3>
+        <p>Starting complex systems node-by-node in separate terminals is error-prone and slow. Launch files ensure reproducible startup sequences, centralize configuration, and enable environment-specific setups. They're essential for production systems where dozens of nodes must start with correct relationships. Launch arguments allow single-source configurations for different robots or environments.</p>
+
+        <h3>When</h3>
+        <p>Use launch files when running more than one node together. For development, Python launch provides flexibility with conditionals and computed values. For simple multi-node systems, YAML launch is cleaner. Use composable nodes in launch files to reduce process overhead. Always version-control launch files alongside code for deployment reproducibility.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Python Launch (C++ ecosystem)</h3>
+        <p>Create a launch file starting talker and listener with parameters:</p>
+        <pre><code class="python"># launch/talker_listener.launch.py
+from launch import LaunchDescription
+from launch_ros.actions import Node
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+
+def generate_launch_description():
+    # Declare launch argument
+    use_sim_time_arg = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='____',
+        description='Use simulation time'
+    )
+    
+    # Get launch configuration
+    use_sim_time = LaunchConfiguration('____')
+    
+    return LaunchDescription([
+        use_sim_time_arg,
+        
+        Node(
+            package='my_pkg',
+            executable='____',
+            name='talker',
+            output='screen',
+            parameters=[{'use_sim_time': ____}]
+        ),
+        
+        Node(
+            package='my_pkg',
+            executable='____',
+            name='listener',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time}],
+            remappings=[
+                ('chatter', '____')  # Remap to topic_name
+            ]
+        )
+    ])</code></pre>
+
+        <h3>YAML Launch (Python ecosystem)</h3>
+        <p>Equivalent declarative launch file:</p>
+        <pre><code class="yaml"># launch/talker_listener.launch.yaml
+launch:
+  - arg:
+      name: use_sim_time
+      default: "false"
+      description: "Use simulation time"
+  
+  - node:
+      pkg: my_pkg
+      exec: ____
+      name: talker
+      output: screen
+      param:
+        - name: use_sim_time
+          value: $(var use_sim_time)
+  
+  - node:
+      pkg: my_pkg
+      exec: ____
+      name: listener
+      output: screen
+      param:
+        - name: use_sim_time
+          value: $(var use_sim_time)
+      remap:
+        - from: chatter
+          to: ____</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Python vs YAML)</h2>
+
+        <h3>Basic Node Launch</h3>
+        <table>
+          <tr>
+            <th>Python</th>
+            <th>YAML</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="python">Node(
+    package='pkg_name',
+    executable='node_name',
+    name='my_node',
+    output='screen'
+)</code></pre>
+            </td>
+            <td>
+              <pre><code class="yaml">- node:
+    pkg: pkg_name
+    exec: node_name
+    name: my_node
+    output: screen</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Parameter Loading</h3>
+        <table>
+          <tr>
+            <th>Python</th>
+            <th>YAML</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="python">Node(
+    package='pkg',
+    executable='node',
+    parameters=[
+        {'param_name': value},
+        config_file_path
+    ]
+)</code></pre>
+            </td>
+            <td>
+              <pre><code class="yaml">- node:
+    pkg: pkg
+    exec: node
+    param:
+      - name: param_name
+        value: value
+      - from: $(find-pkg-share pkg)/config.yaml</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Namespace and Remapping</h3>
+        <table>
+          <tr>
+            <th>Python</th>
+            <th>YAML</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="python">Node(
+    namespace='robot1',
+    remappings=[
+        ('in_topic', 'out_topic')
+    ]
+)</code></pre>
+            </td>
+            <td>
+              <pre><code class="yaml">- node:
+    namespace: robot1
+    remap:
+      - from: in_topic
+        to: out_topic</code></pre>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Advanced Launch with Conditionals</h3>
+        <pre><code class="python">from launch.conditions import IfCondition, UnlessCondition
+from launch.substitutions import LaunchConfiguration
+
+def generate_launch_description():
+    use_rviz = LaunchConfiguration('use_rviz')
+    
+    return LaunchDescription([
+        DeclareLaunchArgument('use_rviz', default_value='true'),
+        
+        # Launch RViz only if use_rviz is true
+        Node(
+            package='rviz2',
+            executable='rviz2',
+            name='rviz2',
+            condition=IfCondition(use_rviz),
+            arguments=['-d', rviz_config_path]
+        ),
+        
+        # Launch headless node unless RViz is used
+        Node(
+            package='my_pkg',
+            executable='headless_node',
+            condition=UnlessCondition(use_rviz)
+        )
+    ])</code></pre>
+
+        <h3>Include Other Launch Files</h3>
+        <pre><code class="python">from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from ament_index_python.packages import get_package_share_directory
+import os
+
+def generate_launch_description():
+    robot_description_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            os.path.join(
+                get_package_share_directory('robot_description'),
+                'launch',
+                'robot_state_publisher.launch.py'
+            )
+        ]),
+        launch_arguments={
+            'use_sim_time': 'true',
+            'robot_name': 'turtlebot3'
+        }.items()
+    )
+    
+    return LaunchDescription([robot_description_launch])</code></pre>
+
+        <h3>Composable Nodes (Reduce Overhead)</h3>
+        <pre><code class="python">from launch_ros.actions import ComposableNodeContainer
+from launch_ros.descriptions import ComposableNode
+
+def generate_launch_description():
+    container = ComposableNodeContainer(
+        name='my_container',
+        namespace='',
+        package='rclcpp_components',
+        executable='component_container',
+        composable_node_descriptions=[
+            ComposableNode(
+                package='my_pkg',
+                plugin='my_pkg::TalkerComponent',
+                name='talker'
+            ),
+            ComposableNode(
+                package='my_pkg',
+                plugin='my_pkg::ListenerComponent',
+                name='listener'
+            )
+        ],
+        output='screen'
+    )
+    
+    return LaunchDescription([container])</code></pre>
+
+        <h3>Event Handlers and Actions</h3>
+        <pre><code class="python">from launch.actions import RegisterEventHandler, LogInfo
+from launch.event_handlers import OnProcessExit
+
+def generate_launch_description():
+    talker_node = Node(
+        package='my_pkg',
+        executable='talker',
+        name='talker'
+    )
+    
+    # Action when talker exits
+    exit_handler = RegisterEventHandler(
+        OnProcessExit(
+            target_action=talker_node,
+            on_exit=[
+                LogInfo(msg='Talker exited, restarting...'),
+                talker_node  # Restart node
+            ]
+        )
+    )
+    
+    return LaunchDescription([talker_node, exit_handler])</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Launch with default arguments
+ros2 launch my_pkg talker_listener.launch.py
+
+# Override launch arguments
+ros2 launch my_pkg talker_listener.launch.py use_sim_time:=true
+
+# Show available launch arguments
+ros2 launch my_pkg talker_listener.launch.py --show-args
+# Expected: Arguments (pass arguments as '&lt;name&gt;:=&lt;value&gt;'):
+#   'use_sim_time': Use simulation time (default: 'false')
+
+# List running nodes
+ros2 node list
+# Expected: /talker, /listener
+
+# Check node parameters
+ros2 param list /talker
+# Expected: use_sim_time, ...
+
+# Verify remapping
+ros2 topic list
+# Expected: /topic_name (remapped from /chatter)</code></pre>
+
+        <h3>Debug Launch Files</h3>
+        <pre><code class="bash"># Print launch description without executing
+ros2 launch my_pkg talker_listener.launch.py --print-description
+
+# Show launch file source
+ros2 launch my_pkg talker_listener.launch.py --print
+
+# Verbose output for debugging
+ros2 launch my_pkg talker_listener.launch.py --debug</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use <code>output='screen'</code> for all nodes during development to see logs. For production, use <code>output='log'</code> and monitor with <code>ros2 node info</code>.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Package Not Found</h3>
+        <p><strong>Symptom:</strong> <code>Package 'my_pkg' not found</code> error when launching.</p>
+        <p><strong>Root Cause:</strong> Package not built or workspace not sourced before launch.</p>
+        <p><strong>Fix:</strong> Build and source workspace:</p>
+        <pre><code class="bash">cd ~/ros2_ws
+colcon build --packages-select my_pkg
+source install/setup.bash
+ros2 launch my_pkg my_launch.launch.py</code></pre>
+
+        <h3>Failure 2: Parameter File Not Found</h3>
+        <p><strong>Symptom:</strong> <code>Failed to load parameter file</code> at launch.</p>
+        <p><strong>Root Cause:</strong> Parameter file path incorrect or not installed to share directory.</p>
+        <p><strong>Fix:</strong> Use proper path resolution and install files:</p>
+        <pre><code class="python"># In launch file
+from ament_index_python.packages import get_package_share_directory
+import os
+
+config_file = os.path.join(
+    get_package_share_directory('my_pkg'),
+    'config',
+    'params.yaml'
+)
+
+# In setup.py or CMakeLists.txt, install config files
+# setup.py:
+data_files=[
+    ('share/' + package_name + '/config', ['config/params.yaml']),
+]
+
+# CMakeLists.txt:
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME}
+)</code></pre>
+
+        <h3>Failure 3: Name Collision</h3>
+        <p><strong>Symptom:</strong> Nodes fail to start with "node name already exists" error.</p>
+        <p><strong>Root Cause:</strong> Multiple nodes launched with same name in same namespace.</p>
+        <p><strong>Fix:</strong> Use unique names or namespaces:</p>
+        <pre><code class="python"># Different names
+Node(package='my_pkg', executable='node', name='node_1')
+Node(package='my_pkg', executable='node', name='node_2')
+
+# Or different namespaces
+Node(package='my_pkg', executable='node', namespace='robot1')
+Node(package='my_pkg', executable='node', namespace='robot2')
+
+# Or use anonymous names (adds unique suffix)
+Node(package='my_pkg', executable='node', name='node', 
+     ros_arguments=['--ros-args', '--enable-rosout-logs'])</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Invalid Argument Handling</h3>
+        <p>Create launch file with argument validation:</p>
+
+        <pre><code class="python">from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.substitutions import LaunchConfiguration
+
+def validate_and_launch(context):
+    robot_name = LaunchConfiguration('robot_name').perform(context)
+    
+    valid_robots = ['turtle1', 'turtle2', 'turtle3']
+    if robot_name not in valid_robots:
+        raise ValueError(f'Invalid robot_name: {robot_name}. '
+                        f'Must be one of {valid_robots}')
+    
+    return [
+        Node(
+            package='my_pkg',
+            executable='robot_node',
+            name=robot_name
+        )
+    ]
+
+def generate_launch_description():
+    return LaunchDescription([
+        DeclareLaunchArgument('robot_name', default_value='turtle1'),
+        OpaqueFunction(function=validate_and_launch)
+    ])</code></pre>
+
+        <p><strong>Detection:</strong> Launch with invalid argument:</p>
+        <pre><code class="bash">ros2 launch my_pkg robot.launch.py robot_name:=invalid_bot
+# Expected: ValueError with clear message about valid options</code></pre>
+
+        <p><strong>Recovery:</strong> Provide helpful error messages listing valid choices.</p>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Launch files don't have type checking by default. Always validate arguments and file paths early in launch execution to fail fast with clear messages.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a hierarchical launch system for multi-robot deployment:</p>
+
+        <ol>
+          <li>Create <code>single_robot.launch.py</code> accepting robot name and namespace parameters</li>
+          <li>Create <code>multi_robot.launch.py</code> that includes single_robot launch N times with different namespaces</li>
+          <li>Add conditional RViz launch only on first robot</li>
+          <li>Implement proper shutdown order using event handlers</li>
+          <li>Create environment-specific launch files: <code>sim.launch.py</code> vs <code>hardware.launch.py</code></li>
+          <li>Use launch argument files (<code>.yaml</code>) to store environment configs</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="params.html">Parameters</a> - Load configuration via launch files</li>
+          <li><a href="lifecycle.html">Lifecycle Nodes</a> - Manage node state transitions in launch</li>
+          <li><a href="gazebo.html">Gazebo Simulation</a> - Launch simulation environments</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - Complex multi-node launch examples</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official docs: <code>docs.ros.org/en/humble/Tutorials/Intermediate/Launch/Launch-Main.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="params.html" class="prev">Parameters</a>
+        <a href="qos.html" class="next">QoS Policies</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

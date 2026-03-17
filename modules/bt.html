@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Behavior Trees - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html" class="active">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#slam">SLAM &amp; Nav2</a> &gt; Behavior Trees
+      </nav>
+
+      <h1 class="page-title">Behavior Trees</h1>
+      <p class="page-outcome">Compose robust navigation logic with modular, reactive decision-making.</p>
+
+      <div class="pills">
+        <span class="pill pill-nav2">Nav2</span>
+        <span class="pill pill-bt">AI Logic</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Behavior Trees (BTs) are hierarchical state machines for robot decision-making. Nav2 uses BehaviorTree.CPP library with XML-defined trees. BTs consist of control nodes (Sequence, Fallback, Parallel) and leaf nodes (actions, conditions). Each node returns SUCCESS, FAILURE, or RUNNING. Execution flows from root, ticking children based on control logic. Nav2 provides built-in BT nodes: ComputePathToPose, FollowPath, Spin, BackUp, ClearCostmap, etc. Trees are reusable, composable, and modifiable without code changes. Support features: blackboard for data sharing, decorators for retry logic, and subtrees for modularity.</p>
+
+        <h3>Why</h3>
+        <p>Finite state machines (FSMs) become unwieldy for complex behaviors - adding recovery logic requires many state transitions. BTs provide modularity: add recovery behaviors without restructuring entire tree. Reactive execution: BTs tick continuously, adapting to changing conditions (unlike FSMs stuck in states). Reusable components: Create common subtrees (docking, patrolling) and compose into missions. Visual representation: XML trees are human-readable, easy to debug. BTs enable non-programmers to modify robot behavior through tree editing.</p>
+
+        <h3>When</h3>
+        <p>Use BTs for all Nav2 navigation - they orchestrate planning, control, and recovery. Customize default trees for mission-specific logic (warehouse patrol, delivery, inspection). Create separate BT files for different missions, loaded dynamically. BTs are declarative but can be verbose - simple behaviors may be clearer as code. Always validate BT syntax before deployment - XML errors cause runtime crashes. Use Groot for visual BT editing and monitoring during execution.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Basic BT Structure</h3>
+        <p>Create simple navigation behavior tree:</p>
+        <pre><code class="xml">&lt;?xml version="1.0"?&gt;
+&lt;root main_tree_to_execute="MainTree"&gt;
+  &lt;BehaviorTree ID="MainTree"&gt;
+    
+    &lt;!-- Sequence: Execute children in order, fail if any fails --&gt;
+    &lt;Sequence name="NavigateWithRecovery"&gt;
+      
+      &lt;!-- Compute global path --&gt;
+      &lt;ComputePathToPose 
+        goal="{goal}" 
+        path="{path}"
+        planner_id="____"/&gt;  &lt;!-- GridBased --&gt;
+      
+      &lt;!-- Follow path with recovery --&gt;
+      &lt;RecoveryNode number_of_retries="3" name="FollowWithRecovery"&gt;
+        
+        &lt;!-- Main behavior --&gt;
+        &lt;FollowPath 
+          path="{path}" 
+          controller_id="FollowPath"/&gt;
+        
+        &lt;!-- Recovery on failure --&gt;
+        &lt;SequenceStar name="RecoveryActions"&gt;
+          &lt;ClearEntireCostmap 
+            name="ClearLocalCostmap"
+            service_name="____"/&gt;  &lt;!-- local_costmap/clear_entirely_local_costmap --&gt;
+          &lt;Spin spin_dist="1.57"/&gt;  &lt;!-- 90 degrees --&gt;
+        &lt;/SequenceStar&gt;
+        
+      &lt;/RecoveryNode&gt;
+      
+    &lt;/Sequence&gt;
+    
+  &lt;/BehaviorTree&gt;
+&lt;/root&gt;</code></pre>
+
+        <h3>Control Node Types</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Node</th>
+              <th>Behavior</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Sequence</code></td>
+              <td>Execute children left-to-right. Fail on first failure.</td>
+              <td>Required steps (plan → execute → verify)</td>
+            </tr>
+            <tr>
+              <td><code>SequenceStar</code></td>
+              <td>Like Sequence but restart from beginning on retry</td>
+              <td>Recovery sequences</td>
+            </tr>
+            <tr>
+              <td><code>Fallback</code></td>
+              <td>Try children until one succeeds</td>
+              <td>Alternative strategies (Plan A, Plan B, Plan C)</td>
+            </tr>
+            <tr>
+              <td><code>Parallel</code></td>
+              <td>Execute children simultaneously</td>
+              <td>Monitor + execute (e.g., time limit + action)</td>
+            </tr>
+            <tr>
+              <td><code>RecoveryNode</code></td>
+              <td>Retry main child, run recovery on failure</td>
+              <td>Action with fallback (navigate with spin recovery)</td>
+            </tr>
+            <tr>
+              <td><code>PipelineSequence</code></td>
+              <td>Like Sequence but continue from last running child</td>
+              <td>Replanning (keep executing, replan in parallel)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Common Nav2 BT Nodes</h3>
+        <pre><code class="xml">&lt;!-- Planning --&gt;
+&lt;ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/&gt;
+&lt;ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/&gt;
+
+&lt;!-- Control --&gt;
+&lt;FollowPath path="{path}" controller_id="FollowPath"/&gt;
+
+&lt;!-- Recovery --&gt;
+&lt;Spin spin_dist="____"/&gt;  &lt;!-- 1.57 radians --&gt;
+&lt;BackUp backup_dist="0.3" backup_speed="0.05"/&gt;
+&lt;Wait wait_duration="5"/&gt;  &lt;!-- seconds --&gt;
+
+&lt;!-- Costmap Management --&gt;
+&lt;ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/&gt;
+&lt;ClearCostmapExceptRegion/&gt;
+&lt;ClearCostmapAroundRobot/&gt;
+
+&lt;!-- Conditions --&gt;
+&lt;IsStuck/&gt;
+&lt;GoalReached/&gt;
+&lt;IsBatteryLow/&gt;
+&lt;DistanceTraveled distance="____"/&gt;  &lt;!-- 5.0 meters --&gt;
+
+&lt;!-- Transform --&gt;
+&lt;GoalUpdater/&gt;  &lt;!-- Update goal from topic --&gt;
+&lt;TruncatePath distance="1.0"/&gt;  &lt;!-- Shorten path --&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (BT Execution)</h2>
+
+        <h3>BT Tick Execution Flow</h3>
+        <pre><code class="python"># Conceptual BT execution
+class BehaviorTree:
+    def __init__(self, root_node):
+        self.root = root_node
+        self.blackboard = {}  # Shared data
+    
+    def tick(self):
+        # Execute tree from root
+        return self.root.tick(self.blackboard)
+
+class SequenceNode:
+    def __init__(self, children):
+        self.children = children
+        self.current_child = 0
+    
+    def tick(self, blackboard):
+        # Execute children in order
+        while self.current_child < len(self.children):
+            status = self.children[self.current_child].tick(blackboard)
+            
+            if status == Status.RUNNING:
+                return Status.____  # RUNNING
+            elif status == Status.FAILURE:
+                self.current_child = 0  # Reset
+                return Status.FAILURE
+            else:  # SUCCESS
+                self.current_child += 1
+        
+        self.current_child = 0  # Reset for next execution
+        return Status.SUCCESS
+
+class RecoveryNode:
+    def __init__(self, main_child, recovery_child, retries):
+        self.main = main_child
+        self.recovery = recovery_child
+        self.max_retries = retries
+        self.retry_count = 0
+    
+    def tick(self, blackboard):
+        # Try main behavior
+        status = self.main.tick(blackboard)
+        
+        if status == Status.RUNNING or status == Status.SUCCESS:
+            self.retry_count = 0
+            return status
+        
+        # Main failed - try recovery
+        if self.retry_count < self.max_retries:
+            self.retry_count += 1
+            recovery_status = self.recovery.tick(blackboard)
+            
+            if recovery_status == Status.SUCCESS:
+                return Status.____  # RUNNING (retry main)
+            else:
+                return Status.RUNNING  # Keep trying recovery
+        
+        # Out of retries
+        return Status.FAILURE</code></pre>
+
+        <h3>Blackboard Data Sharing</h3>
+        <pre><code class="xml">&lt;!-- Write to blackboard --&gt;
+&lt;ComputePathToPose 
+  goal="{goal}"        &lt;!-- INPUT: Read from blackboard key "goal" --&gt;
+  path="{path}"/&gt;      &lt;!-- OUTPUT: Write to blackboard key "path" --&gt;
+
+&lt;!-- Read from blackboard --&gt;
+&lt;FollowPath 
+  path="{path}"/&gt;      &lt;!-- INPUT: Read "path" written above --&gt;
+
+&lt;!-- Blackboard in C++: --&gt;
+// Write
+config().blackboard->set("path", computed_path);
+
+// Read
+nav_msgs::msg::Path path;
+config().blackboard->get("path", path);</code></pre>
+
+        <h3>Custom BT Node Plugin</h3>
+        <pre><code class="cpp">// my_bt_node.hpp
+#include "behaviortree_cpp_v3/action_node.h"
+#include "rclcpp/rclcpp.hpp"
+
+namespace my_bt_nodes {
+
+class MyCustomNode : public BT::SyncActionNode {
+public:
+    MyCustomNode(
+        const std::string & name,
+        const BT::NodeConfiguration & config,
+        rclcpp::Node::SharedPtr node)
+    : SyncActionNode(name, config), node_(node) {}
+    
+    static BT::PortsList providedPorts() {
+        return {
+            BT::InputPort<std::string>("input_param"),
+            BT::OutputPort<int>("output_result")
+        };
+    }
+    
+    BT::NodeStatus tick() override {
+        // Get input from blackboard
+        auto input = getInput<std::string>("input_param");
+        if (!input) {
+            return BT::NodeStatus::____;  // FAILURE
+        }
+        
+        // Your logic here
+        int result = do_computation(input.value());
+        
+        // Write output to blackboard
+        setOutput("output_result", result);
+        
+        return BT::NodeStatus::SUCCESS;
+    }
+
+private:
+    rclcpp::Node::SharedPtr node_;
+};
+
+} // namespace
+
+// Register plugin
+#include "behaviortree_cpp_v3/bt_factory.h"
+BT_REGISTER_NODES(factory) {
+    factory.registerNodeType<my_bt_nodes::MyCustomNode>("MyCustomNode");
+}</code></pre>
+
+        <h3>Subtrees for Reusability</h3>
+        <pre><code class="xml">&lt;root main_tree_to_execute="MainTree"&gt;
+  
+  &lt;!-- Main mission tree --&gt;
+  &lt;BehaviorTree ID="MainTree"&gt;
+    &lt;Sequence&gt;
+      &lt;SubTree ID="NavigateToWaypoint" target="waypoint1"/&gt;
+      &lt;SubTree ID="PerformTask"/&gt;
+      &lt;SubTree ID="____" target="home"/&gt;  &lt;!-- NavigateToWaypoint --&gt;
+    &lt;/Sequence&gt;
+  &lt;/BehaviorTree&gt;
+  
+  &lt;!-- Reusable navigation subtree --&gt;
+  &lt;BehaviorTree ID="NavigateToWaypoint"&gt;
+    &lt;Sequence&gt;
+      &lt;ComputePathToPose goal="{target}" path="{path}"/&gt;
+      &lt;FollowPath path="{path}"/&gt;
+    &lt;/Sequence&gt;
+  &lt;/BehaviorTree&gt;
+  
+  &lt;!-- Task-specific subtree --&gt;
+  &lt;BehaviorTree ID="PerformTask"&gt;
+    &lt;Sequence&gt;
+      &lt;Wait wait_duration="2"/&gt;
+      &lt;!-- Add task actions here --&gt;
+    &lt;/Sequence&gt;
+  &lt;/BehaviorTree&gt;
+  
+&lt;/root&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>bt_navigator Configuration</h3>
+        <pre><code class="yaml">bt_navigator:
+  ros__parameters:
+    use_sim_time: true
+    
+    # BT XML files
+    default_nav_to_pose_bt_xml: "/path/to/navigate_to_pose.xml"
+    default_nav_through_poses_bt_xml: "/path/to/navigate_through_poses.xml"
+    
+    # Plugin libraries
+    plugin_lib_names:
+      - nav2_compute_path_to_pose_action_bt_node
+      - nav2_follow_path_action_bt_node
+      - nav2_spin_action_bt_node
+      - nav2_back_up_action_bt_node
+      - nav2_clear_costmap_service_bt_node
+      - ____  # Your custom plugin library
+    
+    # Behavior tree loop rate
+    bt_loop_duration: 10  # milliseconds
+    default_server_timeout: 20  # milliseconds</code></pre>
+
+        <h3>Loading Custom BT at Runtime</h3>
+        <pre><code class="bash"># Launch with custom BT file
+ros2 launch nav2_bringup navigation_launch.py \
+  default_bt_xml_filename:=/path/to/my_custom_bt.xml
+
+# Or send action goal with custom BT
+ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
+  "{pose: {...}, behavior_tree: '/path/to/mission_bt.xml'}"</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Verify bt_navigator running
+ros2 node list | grep bt_navigator
+# Expected: /bt_navigator
+
+# Check loaded BT file
+ros2 param get /bt_navigator default_nav_to_pose_bt_xml
+# Shows path to current BT XML
+
+# Test BT with navigation goal
+ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
+  "{pose: {header: {frame_id: 'map'}, pose: {position: {x: 5.0}}}}"
+
+# Monitor BT execution (if Groot enabled)
+# groot listens on port 1667 by default
+
+# Check for BT errors in logs
+ros2 topic echo /rosout | grep bt_navigator
+# Look for "BT returned FAILURE" or XML parsing errors</code></pre>
+
+        <h3>Groot Visualization</h3>
+        <pre><code class="bash"># Install Groot (BT visualization tool)
+# Download from: https://github.com/BehaviorTree/Groot
+
+# Enable Groot server in bt_navigator config
+bt_navigator:
+  ros__parameters:
+    enable_groot_monitoring: true
+    groot_zmq_publisher_port: ____  # 1666
+    groot_zmq_server_port: 1667
+
+# Launch Groot
+./Groot
+
+# In Groot:
+# 1. Connect to "localhost:1667"
+# 2. Load your BT XML for editing
+# 3. Monitor execution in real-time
+# 4. See which nodes are SUCCESS/RUNNING/FAILURE
+# 5. Inspect blackboard values</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use Groot's replay feature to debug failed missions. It logs entire BT execution trace, allowing step-by-step analysis of decision flow.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: BT XML Parsing Error</h3>
+        <p><strong>Symptom:</strong> bt_navigator fails to start with "Failed to parse BT XML" error.</p>
+        <p><strong>Root Cause:</strong> Invalid XML syntax, typo in node name, or missing required port.</p>
+        <p><strong>Fix:</strong> Validate XML and check node definitions:</p>
+        <pre><code class="bash"># Check XML syntax
+xmllint --noout /path/to/my_bt.xml
+# Expected: No errors
+
+# Common mistakes:
+# 1. Missing closing tag
+&lt;Sequence&gt;
+  &lt;ComputePathToPose .../&gt;
+# &lt;/Sequence&gt;  &lt;!-- MISSING --&gt;
+
+# 2. Typo in node name
+&lt;ComputePathToPose .../&gt;  # Correct
+&lt;ComputPathToPose .../&gt;   # WRONG (missing 'e')
+
+# 3. Missing required port
+&lt;ComputePathToPose goal="{goal}"/&gt;  # MISSING path="{path}"
+
+# Fix: Add all required ports
+&lt;ComputePathToPose goal="{goal}" path="{____}"/&gt;  # path</code></pre>
+
+        <h3>Failure 2: BT Returns FAILURE Immediately</h3>
+        <p><strong>Symptom:</strong> Navigation aborts instantly without attempting to plan/execute.</p>
+        <p><strong>Root Cause:</strong> Condition node failing early or blackboard data missing.</p>
+        <p><strong>Fix:</strong> Add logging and check blackboard:</p>
+        <pre><code class="xml">&lt;!-- Add logging nodes for debugging --&gt;
+&lt;Sequence&gt;
+  &lt;AlwaysSuccess name="LogStart"&gt;
+    &lt;!-- Prints to log when executed --&gt;
+  &lt;/AlwaysSuccess&gt;
+  
+  &lt;ComputePathToPose goal="{goal}" path="{path}"/&gt;
+  
+  &lt;AlwaysSuccess name="LogPathComputed"/&gt;
+  
+  &lt;FollowPath path="{path}"/&gt;
+&lt;/Sequence&gt;
+
+&lt;!-- Check if goal is set in blackboard --&gt;
+# If goal is null/empty, ComputePathToPose fails immediately</code></pre>
+
+        <h3>Failure 3: Infinite Recovery Loop</h3>
+        <p><strong>Symptom:</strong> Robot repeatedly executes recovery behaviors, never makes progress.</p>
+        <p><strong>Root Cause:</strong> Recovery doesn't fix underlying issue, or retry count too high.</p>
+        <p><strong>Fix:</strong> Limit retries and add failure detection:</p>
+        <pre><code class="xml">&lt;RecoveryNode number_of_retries="____" name="LimitedRecovery"&gt;  &lt;!-- 3 (not 99) --&gt;
+  &lt;FollowPath path="{path}"/&gt;
+  
+  &lt;!-- Recovery actions --&gt;
+  &lt;SequenceStar&gt;
+    &lt;ClearCostmap/&gt;
+    &lt;Spin spin_dist="1.57"/&gt;
+    
+    &lt;!-- Add condition to break loop --&gt;
+    &lt;IsStuck/&gt;  &lt;!-- If stuck, FAIL recovery --&gt;
+  &lt;/SequenceStar&gt;
+&lt;/RecoveryNode&gt;
+
+&lt;!-- After RecoveryNode fails, use Fallback for alternative --&gt;
+&lt;Fallback&gt;
+  &lt;RecoveryNode .../&gt;  &lt;!-- Try navigation --&gt;
+  &lt;SubTree ID="AbortAndReturnHome"/&gt;  &lt;!-- Fallback plan --&gt;
+&lt;/Fallback&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Break Blackboard Data Flow</h3>
+        <p>Mismatch blackboard keys to see execution failure:</p>
+
+        <pre><code class="xml">&lt;!-- Intentional error --&gt;
+&lt;Sequence&gt;
+  &lt;!-- Writes to "path" --&gt;
+  &lt;ComputePathToPose goal="{goal}" path="{path}"/&gt;
+  
+  &lt;!-- Tries to read "wrong_key" (doesn't exist) --&gt;
+  &lt;FollowPath path="{____}"/&gt;  &lt;!-- wrong_key instead of path --&gt;
+&lt;/Sequence&gt;
+
+&lt;!-- Observe:
+- ComputePathToPose succeeds, writes path
+- FollowPath fails immediately with "Missing required input"
+- Sequence returns FAILURE
+- Navigation aborts
+--&gt;</code></pre>
+
+        <p><strong>Detection:</strong> Enable BT logging:</p>
+        <pre><code class="bash"># Set log level to DEBUG
+ros2 run nav2_bt_navigator bt_navigator --ros-args \
+  --log-level DEBUG
+
+# Logs show:
+# "Port [path] not found in blackboard"</code></pre>
+
+        <p><strong>Recovery:</strong> Match blackboard keys:</p>
+        <pre><code class="xml">&lt;FollowPath path="{path}"/&gt;  &lt;!-- Corrected --&gt;</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>BT nodes execute at 10Hz by default (bt_loop_duration: 10ms). Don't add CPU-intensive operations directly in BT nodes - use action servers called from BT instead.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build advanced BT systems:</p>
+
+        <ol>
+          <li>Create library of mission-specific BT subtrees (docking, elevator, charging)</li>
+          <li>Implement dynamic BT selection based on robot state/environment</li>
+          <li>Build BT node for multi-robot coordination (wait for peer, form convoy)</li>
+          <li>Add learning-based node that adapts behavior from success/failure history</li>
+          <li>Create BT visualization dashboard (web UI showing live execution)</li>
+          <li>Implement BT hot-reload (update tree without restarting navigation)</li>
+          <li>Build BT testing framework (unit test individual nodes, simulate conditions)</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="recovery.html">Recovery Behaviors</a> - Actions used in BT recovery nodes</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - BT orchestration of navigation</li>
+          <li><a href="planners.html">Path Planners</a> - Called from ComputePathToPose node</li>
+          <li><a href="controllers.html">Controllers</a> - Called from FollowPath node</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>BehaviorTree.CPP docs: <code>behaviortree.dev</code></p>
+          <p>Nav2 BT docs: <code>navigation.ros.org/behavior_trees</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="controllers.html" class="prev">Controllers</a>
+        <a href="recovery.html" class="next">Recovery Behaviors</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

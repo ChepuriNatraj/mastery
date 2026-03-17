@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Costmaps - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html" class="active">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#slam">SLAM &amp; Nav2</a> &gt; Costmaps
+      </nav>
+
+      <h1 class="page-title">Costmaps</h1>
+      <p class="page-outcome">Represent obstacles and free space for safe path planning and control.</p>
+
+      <div class="pills">
+        <span class="pill pill-nav2">Nav2</span>
+        <span class="pill pill-perception">Perception</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Costmaps are 2D occupancy grids representing obstacle cost at each cell. Nav2 uses two costmaps: global (entire known map) and local (robot-centered rolling window). Each cell contains a cost from 0-254 (free to lethal), with 255 reserved for "unknown". Costmaps combine multiple layers: static map, obstacle inflation, sensor observations (lidar, depth cameras), and custom zones (keepout, speed limits). Updated continuously as robot moves and sensors detect obstacles. Used by planners to find collision-free paths and controllers to avoid dynamic obstacles.</p>
+
+        <h3>Why</h3>
+        <p>Raw sensor data and maps are insufficient for navigation - need unified representation of traversability. Costmaps merge heterogeneous inputs (map, laser, cameras) into single grid. Inflation layer grows obstacles by robot radius to simplify collision checking (if robot center avoids inflated obstacles, entire footprint is clear). Separate global/local costmaps enable efficient multi-resolution planning: global uses low-res entire map, local uses high-res immediate area. Layered architecture allows modular customization without changing core navigation code.</p>
+
+        <h3>When</h3>
+        <p>Costmaps are mandatory for Nav2 navigation. Global costmap is static for pre-mapped environments or updates slowly with SLAM. Local costmap updates at 5-20 Hz tracking sensor observations. Tune costmap size, resolution, and update frequency based on robot speed and environment complexity. Large costmaps (50m+) with high resolution (< 2cm) consume significant CPU/memory. Always visualize costmaps in RViz during tuning - misconfigurations cause navigation failures that are invisible without visualization.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Basic Costmap Configuration</h3>
+        <p>Configure global and local costmaps:</p>
+        <pre><code class="yaml"># nav2_params.yaml
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      # Frame and timing
+      global_frame: ____  # map
+      robot_base_frame: base_link
+      update_frequency: 1.0  # Hz - slow for static map
+      publish_frequency: 1.0
+      
+      # Dimensions
+      width: 50  # meters
+      height: 50
+      resolution: ____  # 0.05 (5cm per cell)
+      
+      # Robot footprint (for collision checking)
+      robot_radius: 0.22  # meters (if circular)
+      # OR for polygonal footprint:
+      # footprint: "[[0.3, 0.2], [0.3, -0.2], [-0.3, -0.2], [-0.3, 0.2]]"
+      
+      # Behavior
+      rolling_window: ____  # false (fixed on map origin)
+      track_unknown_space: true
+      use_maximum: false
+      
+      # Plugins (layers)
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      
+      # Individual layer configs below...
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      global_frame: odom
+      robot_base_frame: base_link
+      update_frequency: ____  # 5.0 Hz (faster for dynamic obstacles)
+      publish_frequency: 2.0
+      
+      width: 5  # meters (smaller than global)
+      height: 5
+      resolution: 0.05
+      
+      robot_radius: 0.22
+      rolling_window: ____  # true (follows robot)
+      track_unknown_space: false  # Assume clear
+      
+      plugins: ["voxel_layer", "inflation_layer"]</code></pre>
+
+        <h3>Static Layer (Map)</h3>
+        <p>Load pre-built map into global costmap:</p>
+        <pre><code class="yaml">global_costmap:
+  global_costmap:
+    static_layer:
+      plugin: "nav2_costmap_2d::StaticLayer"
+      map_subscribe_transient_local: true
+      enabled: true
+      subscribe_to_updates: ____  # true
+      map_topic: /map</code></pre>
+
+        <h3>Obstacle Layer (Sensor Data)</h3>
+        <p>Add dynamic obstacles from laser scan:</p>
+        <pre><code class="yaml">global_costmap:
+  global_costmap:
+    obstacle_layer:
+      plugin: "nav2_costmap_2d::ObstacleLayer"
+      enabled: true
+      
+      # Observation sources
+      observation_sources: scan
+      
+      scan:
+        topic: ____  # /scan
+        sensor_frame: laser_frame  # Must match TF
+        data_type: "LaserScan"
+        
+        # Marking (add obstacles)
+        marking: true
+        max_obstacle_height: 2.0
+        min_obstacle_height: 0.0
+        obstacle_max_range: 2.5  # Only obstacles within 2.5m
+        obstacle_min_range: ____  # 0.0
+        
+        # Clearing (remove stale obstacles)
+        clearing: true
+        raytrace_max_range: 3.0  # Clear up to 3m
+        raytrace_min_range: 0.0
+        
+        # Filtering
+        inf_is_valid: false</code></pre>
+
+        <h3>Inflation Layer (Safety Margin)</h3>
+        <p>Expand obstacles by robot radius:</p>
+        <pre><code class="yaml">global_costmap:
+  global_costmap:
+    inflation_layer:
+      plugin: "nav2_costmap_2d::InflationLayer"
+      enabled: true
+      
+      # Inflation radius (robot radius + safety margin)
+      inflation_radius: ____  # 0.55 (0.22 robot + 0.33 margin)
+      
+      # Cost scaling (exponential decay from obstacle)
+      cost_scaling_factor: ____  # 3.0 (higher = steeper cost gradient)
+      
+      inflate_unknown: false
+      inflate_around_unknown: true</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Layer System)</h2>
+
+        <h3>Costmap Cell Values</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Value</th>
+              <th>Name</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>0</code></td>
+              <td>FREE_SPACE</td>
+              <td>Completely clear, no obstacles</td>
+            </tr>
+            <tr>
+              <td><code>1-127</code></td>
+              <td>LOW_COST</td>
+              <td>Inflated area, prefer to avoid</td>
+            </tr>
+            <tr>
+              <td><code>128-252</code></td>
+              <td>MEDIUM_COST</td>
+              <td>Close to obstacles, high cost</td>
+            </tr>
+            <tr>
+              <td><code>253</code></td>
+              <td>INSCRIBED</td>
+              <td>Robot inscribed radius boundary</td>
+            </tr>
+            <tr>
+              <td><code>254</code></td>
+              <td>LETHAL</td>
+              <td>Obstacle detected, collision</td>
+            </tr>
+            <tr>
+              <td><code>255</code></td>
+              <td>UNKNOWN</td>
+              <td>No information (unexplored)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Layer Update Order</h3>
+        <pre><code class="cpp">// Conceptual costmap update cycle
+void Costmap2D::updateMap() {
+    // 1. Reset to default (typically unknown or free)
+    resetMap();
+    
+    // 2. Apply each layer in order
+    for (auto& layer : plugins_) {
+        if (layer->isEnabled()) {
+            // Static layer: copy map data
+            // Obstacle layer: add sensor observations
+            // Inflation layer: expand obstacles
+            layer->updateCosts(master_grid_, min_i, min_j, max_i, max_j);
+        }
+    }
+    
+    // 3. Publish updated costmap
+    publishCostmap();
+}</code></pre>
+
+        <h3>Voxel Layer (3D Obstacles)</h3>
+        <p>Alternative to obstacle layer with vertical clearing:</p>
+        <pre><code class="yaml">local_costmap:
+  local_costmap:
+    voxel_layer:
+      plugin: "nav2_costmap_2d::VoxelLayer"
+      enabled: true
+      
+      # 3D grid configuration
+      origin_z: 0.0
+      z_resolution: ____  # 0.2 (20cm per voxel)
+      z_voxels: 16  # 16 * 0.2 = 3.2m max height
+      
+      # Mark/clear thresholds
+      unknown_threshold: 15
+      mark_threshold: 0
+      
+      # Observation sources (same as obstacle layer)
+      observation_sources: scan
+      scan:
+        topic: /scan
+        marking: true
+        clearing: true
+        max_obstacle_height: 2.0
+        min_obstacle_height: ____  # 0.1 (ignore ground)</code></pre>
+
+        <h3>Custom Layer Plugin</h3>
+        <pre><code class="cpp">// my_custom_layer.hpp
+#include "nav2_costmap_2d/layer.hpp"
+
+namespace my_costmap_plugins {
+
+class MyCustomLayer : public nav2_costmap_2d::Layer {
+public:
+    virtual void onInitialize() override {
+        // Setup subscriptions, parameters
+        auto node = node_.lock();
+        node->declare_parameter("my_param", 10.0);
+    }
+    
+    virtual void updateBounds(
+        double robot_x, double robot_y, double robot_yaw,
+        double* min_x, double* min_y, double* max_x, double* max_y) override {
+        // Define region that needs updating
+        *min_x = robot_x - ____;  // 2.0
+        *min_y = robot_y - 2.0;
+        *max_x = robot_x + 2.0;
+        *max_y = robot_y + ____;  // 2.0
+    }
+    
+    virtual void updateCosts(
+        nav2_costmap_2d::Costmap2D& master_grid,
+        int min_i, int min_j, int max_i, int max_j) override {
+        // Add costs to master_grid
+        for (int j = min_j; j < max_j; j++) {
+            for (int i = min_i; i < max_i; i++) {
+                unsigned char cost = computeCustomCost(i, j);
+                master_grid.setCost(i, j, cost);
+            }
+        }
+    }
+};
+
+} // namespace</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Robot Footprint Types</h3>
+        <pre><code class="yaml"># Circular robot (simplest)
+robot_radius: 0.22  # meters
+
+# Polygonal footprint (more accurate)
+footprint: "[[0.3, 0.2], [0.3, -0.2], [-0.3, -0.2], [-0.3, 0.2]]"
+# Format: [[x1, y1], [x2, y2], ...] in meters relative to base_link
+
+# For rectangles: front-right, front-left, back-left, back-right</code></pre>
+
+        <h3>Inflation Tuning</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Effect</th>
+              <th>Tune When</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>inflation_radius</code></td>
+              <td>Distance obstacles expand</td>
+              <td>Robot size changes, add safety margin</td>
+            </tr>
+            <tr>
+              <td><code>cost_scaling_factor</code></td>
+              <td>Cost gradient steepness</td>
+              <td>Robot hugs walls (increase) or overly cautious (decrease)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Performance Optimization</h3>
+        <pre><code class="yaml"># For high-speed robots or constrained CPU
+local_costmap:
+  local_costmap:
+    # Smaller costmap
+    width: 3
+    height: 3
+    
+    # Lower resolution
+    resolution: 0.1  # 10cm instead of 5cm
+    
+    # Reduce update rate
+    update_frequency: 5.0  # Was 10.0
+    
+    # Limit sensor range
+    obstacle_layer:
+      scan:
+        obstacle_max_range: 2.0  # Was 3.0
+        raytrace_max_range: 2.5</code></pre>
+
+        <h3>Keepout Zones</h3>
+        <pre><code class="yaml"># Add keepout filter layer
+global_costmap:
+  global_costmap:
+    plugins: ["static_layer", "obstacle_layer", "inflation_layer", "keepout_filter"]
+    
+    keepout_filter:
+      plugin: "nav2_costmap_2d::KeepoutFilter"
+      enabled: true
+      filter_info_topic: "/costmap_filter_info"
+      
+      # Keepout areas marked as LETHAL
+      # Use map_server to publish keepout map</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Verify costmap publishers
+ros2 topic list | grep costmap
+# Expected: /global_costmap/costmap, /local_costmap/costmap
+
+# Check costmap update rate
+ros2 topic hz /local_costmap/costmap
+# Expected: ~2-5 Hz (matches publish_frequency)
+
+# Inspect costmap metadata
+ros2 topic echo /global_costmap/costmap --once
+# Shows: resolution, width, height, origin
+
+# Check for errors
+ros2 topic echo /diagnostics | grep costmap
+# Look for ERROR or WARN messages
+
+# Test obstacle detection: Place object in front of robot
+# Then check local costmap
+ros2 topic echo /local_costmap/costmap_updates --once
+# Should show updated cells with lethal cost</code></pre>
+
+        <h3>RViz Visualization</h3>
+        <pre><code class="bash"># Launch RViz
+rviz2
+
+# Add costmap displays:
+# 1. Map (topic: /global_costmap/costmap) - color scheme: costmap
+# 2. Map (topic: /local_costmap/costmap) - color scheme: costmap
+# 3. PointCloud2 (topic: /scan) or LaserScan
+
+# Verify visually:
+# - Global costmap covers entire known map
+# - Static obstacles (walls) show as lethal (black)
+# - Inflation layer shows cost gradient (dark red → light red)
+# - Local costmap follows robot as rolling window
+# - Dynamic obstacles appear in local costmap when robot moves
+# - Cleared areas turn free (light blue/white) as robot passes</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Set local costmap size to 2-3x robot's max speed * reaction time. For 1 m/s robot with 0.5s reaction: 3m costmap (robot can stop before edge).</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Robot Treats Open Space as Obstacle</h3>
+        <p><strong>Symptom:</strong> Costmap shows lethal costs in known-clear areas, robot won't navigate through.</p>
+        <p><strong>Root Cause:</strong> Sensor observations marking false obstacles (sensor noise, reflections).</p>
+        <p><strong>Fix:</strong> Tune obstacle layer marking parameters:</p>
+        <pre><code class="yaml">obstacle_layer:
+  scan:
+    # Reduce marking range (ignore distant noise)
+    obstacle_max_range: 3.0  # Was 5.0
+    
+    # Increase marking threshold (require multiple observations)
+    # (For voxel layer only:)
+    # mark_threshold: 2  # Need 2 hits to mark
+    
+    # Filter max range readings
+    inf_is_valid: ____  # false
+    
+    # Clear aggressively
+    raytrace_max_range: ____  # 4.0 (longer than marking range)</code></pre>
+
+        <h3>Failure 2: Obstacles Persist After Removal</h3>
+        <p><strong>Symptom:</strong> Move obstacle away but costmap still shows it as occupied.</p>
+        <p><strong>Root Cause:</strong> Clearing disabled or insufficient raytrace range.</p>
+        <p><strong>Fix:</strong> Enable clearing and verify raytrace:</p>
+        <pre><code class="yaml">obstacle_layer:
+  scan:
+    clearing: ____  # true (must be enabled)
+    raytrace_max_range: 3.0  # At least as far as obstacle_max_range
+    
+    # For voxel layer, check thresholds
+    unknown_threshold: 15
+    mark_threshold: 0  # Easy to mark
+    # Voxels decay over time when not observed</code></pre>
+
+        <h3>Failure 3: Robot Collides Despite Costmap</h3>
+        <p><strong>Symptom:</strong> Costmap shows obstacles but robot still hits them.</p>
+        <p><strong>Root Cause:</strong> Incorrect robot footprint, inflation too small, or TF errors.</p>
+        <p><strong>Fix:</strong> Verify footprint and inflation:</p>
+        <pre><code class="bash"># Check actual robot dimensions
+# Measure: length, width, turning radius
+
+# Update footprint (add 5-10cm safety margin)
+footprint: "[[0.35, 0.25], [0.35, -0.25], [-0.35, -0.25], [-0.35, 0.25]]"
+# Was: [[0.3, 0.2], ...] but robot is actually bigger
+
+# Increase inflation
+inflation_radius: 0.6  # Was 0.4
+
+# Verify TF alignment
+ros2 run tf2_ros tf2_echo base_link laser_frame
+# If transform is wrong, laser readings misaligned with robot center</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Disable Inflation and Observe</h3>
+        <p>Remove inflation layer to see collision-free planning failure:</p>
+
+        <pre><code class="yaml"># Modify nav2_params.yaml
+local_costmap:
+  local_costmap:
+    plugins: ["voxel_layer"]  # Removed "inflation_layer"
+    
+    # Restart Nav2
+    # ros2 launch nav2_bringup navigation_launch.py
+
+# Send navigation goal near obstacle
+
+# Observe in RViz:
+# - Planned path goes right next to obstacles (cost = 0 everywhere except obstacles)
+# - Controller tries to follow path
+# - Robot's corners/edges collide with obstacles
+# - Without inflation, planner thinks robot center just needs to avoid obstacles
+# - Forgets robot has physical size!</code></pre>
+
+        <p><strong>Detection:</strong> Check if inflation layer is enabled:</p>
+        <pre><code class="bash">ros2 param get /local_costmap/local_costmap plugins
+# Should include "inflation_layer"
+
+# Visualize costmap in RViz
+# Without inflation: Sharp black/white (lethal/free)
+# With inflation: Gradient red→orange→yellow around obstacles</code></pre>
+
+        <p><strong>Recovery:</strong> Re-enable inflation:</p>
+        <pre><code class="yaml">plugins: ["voxel_layer", "____"]  # inflation_layer
+
+# Set appropriate radius
+inflation_radius: 0.55  # Robot radius (0.22) + margin (0.33)</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Costmap layers execute in order. Always place inflation_layer last - it needs final obstacle positions to compute gradients correctly.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build advanced costmap configurations:</p>
+
+        <ol>
+          <li>Create custom layer plugin that adds semantic information (slippery floors, narrow passages)</li>
+          <li>Implement time-varying costs (restricted zones during certain hours)</li>
+          <li>Add multi-sensor fusion (laser + depth camera + ultrasonic)</li>
+          <li>Build keepout zone system with dynamic loading from database</li>
+          <li>Create costmap visualization tool showing layer contributions separately</li>
+          <li>Implement elevation costmap for uneven terrain (3D voxel grid)</li>
+          <li>Add social costmap layer that treats people as dynamic high-cost zones</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="planners.html">Path Planners</a> - Use costmaps for global planning</li>
+          <li><a href="controllers.html">Controllers</a> - Use costmaps for local obstacle avoidance</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - Integration with full navigation</li>
+          <li><a href="tf.html">TF Transforms</a> - Critical for sensor data alignment</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official costmap docs: <code>navigation.ros.org/configuration/packages/configuring-costmaps.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="nav2.html" class="prev">Nav2 Stack</a>
+        <a href="planners.html" class="next">Path Planners</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

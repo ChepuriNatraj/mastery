@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Path Planners - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html" class="active">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#slam">SLAM &amp; Nav2</a> &gt; Path Planners
+      </nav>
+
+      <h1 class="page-title">Path Planners</h1>
+      <p class="page-outcome">Compute collision-free global paths from start to goal using A*, Dijkstra, and hybrid search.</p>
+
+      <div class="pills">
+        <span class="pill pill-nav2">Nav2</span>
+        <span class="pill pill-planning">Planning</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Path planners compute obstacle-free routes from robot's current pose to goal using global costmap. Nav2 provides multiple planner plugins: NavFn (Dijkstra/A*), Smac Planner (hybrid-A* with kinematic constraints), and Theta* (any-angle). Planners return nav_msgs/Path - sequence of PoseStamped waypoints. Planning happens at low frequency (0.1-1 Hz) since global map changes slowly. Results are kinematically feasible (Smac) or geometric (NavFn) paths that controllers then track. Support features: tolerance goals, alternative paths, and planning timeouts.</p>
+
+        <h3>Why</h3>
+        <p>Controllers alone can't navigate complex environments - need global guidance to avoid local minima (dead ends, traps). Planners use full map knowledge to find optimal routes considering obstacle layout. Different planners trade speed vs quality: NavFn is fast but ignores robot kinematics, Smac is slower but generates drivable paths for car-like robots. Replanning enables dynamic obstacle avoidance - when path is blocked, planner computes new route. Efficient planners are critical for responsive navigation in large environments.</p>
+
+        <h3>When</h3>
+        <p>Use NavFn for differential drive robots in simple environments. Use Smac Hybrid-A* for ackermann (car-like) steering or when paths must be kinematically feasible. Use Theta* when smooth, direct paths are preferred over grid-aligned. Planner choice affects computational load significantly: NavFn ~10ms, Smac ~100-500ms, Theta* ~20-50ms. Always set planning timeout and handle failure cases. Test planners offline in RViz before deployment - visualize paths to verify quality.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Configure Planner Server</h3>
+        <p>Set up planner with multiple plugin options:</p>
+        <pre><code class="yaml"># nav2_params.yaml
+planner_server:
+  ros__parameters:
+    use_sim_time: true
+    
+    # Planner plugins
+    expected_planner_frequency: ____  # 1.0 Hz
+    planner_plugins: ["GridBased", "SmacHybrid"]
+    
+    # NavFn Planner (Dijkstra/A*)
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.5  # Goal tolerance in meters
+      use_astar: ____  # true (A* faster than Dijkstra)
+      allow_unknown: false  # Don't plan through unknown space
+      use_final_approach_orientation: false
+    
+    # Smac Hybrid-A* Planner
+    SmacHybrid:
+      plugin: "nav2_smac_planner/SmacPlannerHybrid"
+      
+      # Search parameters
+      tolerance: 0.5
+      downsample_costmap: false
+      downsampling_factor: 1
+      
+      # Kinematic limits
+      minimum_turning_radius: ____  # 0.4 meters (for car-like robots)
+      angle_quantization_bins: 72  # 5-degree resolution
+      
+      # Heuristic
+      cost_travel_multiplier: 2.0
+      reverse_penalty: 2.0  # Prefer forward motion
+      change_penalty: 0.1  # Penalize direction changes
+      non_straight_penalty: 1.2
+      
+      # Analytic expansion (shortcut to goal)
+      analytic_expansion_ratio: 3.5
+      analytic_expansion_max_length: 3.0
+      
+      # Smoothing
+      smoother:
+        max_iterations: 1000
+        w_smooth: ____  # 0.3
+        w_data: 0.2
+        tolerance: 1e-10</code></pre>
+
+        <h3>Call Planner Service</h3>
+        <p>Request path computation directly:</p>
+        <pre><code class="bash"># Compute path using GridBased planner
+ros2 service call /compute_path_to_pose nav2_msgs/srv/ComputePathToPose \
+"{
+  start: {
+    header: {frame_id: 'map'},
+    pose: {position: {x: 0.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}
+  },
+  goal: {
+    header: {frame_id: 'map'},
+    pose: {position: {x: ____, y: 3.0, z: 0.0}, orientation: {w: 1.0}}
+  },
+  planner_id: '____'
+}"
+# Expected: Returns path with poses array, planning_time</code></pre>
+
+        <h3>Visualize Path in RViz</h3>
+        <p>Display planned paths:</p>
+        <pre><code class="bash"># Launch RViz
+rviz2
+
+# Add displays:
+# 1. Map (topic: /global_costmap/costmap)
+# 2. Path (topic: /plan) - shows global path in purple
+# 3. RobotModel
+
+# Send navigation goal with "Nav2 Goal" tool
+# Watch path appear from robot to goal
+# Path should:
+# - Avoid obstacles (stay in free space)
+# - Be smooth (Smac) or grid-aligned (NavFn)
+# - Update when goal changes</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Algorithms)</h2>
+
+        <h3>NavFn Planner (A* Search)</h3>
+        <pre><code class="python"># Conceptual A* algorithm
+import heapq
+
+def a_star(start, goal, costmap):
+    # Priority queue: (f_score, pose)
+    open_set = [(0, start)]
+    came_from = {}
+    
+    g_score = {start: 0}
+    f_score = {start: heuristic(start, goal)}
+    
+    while open_set:
+        current = heapq.heappop(open_set)[1]
+        
+        if current == goal:
+            return reconstruct_path(came_from, current)
+        
+        for neighbor in get_neighbors(current, costmap):
+            # Cost = g + edge_cost
+            tentative_g = g_score[current] + ____  # edge_cost(current, neighbor)
+            
+            if tentative_g < g_score.get(neighbor, float('inf')):
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g
+                f_score[neighbor] = tentative_g + heuristic(neighbor, ____)  # goal
+                
+                if neighbor not in [p[1] for p in open_set]:
+                    heapq.heappush(open_set, (f_score[neighbor], neighbor))
+    
+    return None  # No path found
+
+def heuristic(pose, goal):
+    # Euclidean distance
+    dx = goal.x - pose.x
+    dy = goal.y - pose.y
+    return (dx**2 + dy**2) ** 0.5</code></pre>
+
+        <h3>Planner Comparison</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Planner</th>
+              <th>Algorithm</th>
+              <th>Speed</th>
+              <th>Quality</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>NavfnPlanner</code></td>
+              <td>A* / Dijkstra</td>
+              <td>Fast (10ms)</td>
+              <td>Grid-aligned, ignores kinematics</td>
+              <td>Differential drive, simple environments</td>
+            </tr>
+            <tr>
+              <td><code>SmacPlannerHybrid</code></td>
+              <td>Hybrid-A*</td>
+              <td>Slow (100-500ms)</td>
+              <td>Kinematically feasible, smooth</td>
+              <td>Ackermann steering, parking</td>
+            </tr>
+            <tr>
+              <td><code>SmacPlanner2D</code></td>
+              <td>A* with SE2</td>
+              <td>Medium (50ms)</td>
+              <td>Orientation-aware, grid-based</td>
+              <td>Diff drive with heading constraints</td>
+            </tr>
+            <tr>
+              <td><code>ThetaStarPlanner</code></td>
+              <td>Theta*</td>
+              <td>Medium (20-50ms)</td>
+              <td>Any-angle, shorter paths</td>
+              <td>Open spaces, prefer direct routes</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Smac Hybrid-A* Explanation</h3>
+        <pre><code class="plaintext">Hybrid-A* Search Space:
+- States: (x, y, theta) - position + heading
+- Expansions: Simulate vehicle motion model
+  → Forward motion
+  → Forward + left steer
+  → Forward + right steer
+  → Reverse motion (with penalty)
+  
+Advantages:
+- Paths respect turning radius constraints
+- No post-processing smoothing needed (Smac has built-in)
+- Analytic expansion: Try direct curve to goal
+
+Disadvantages:
+- 3D search space (x, y, theta) vs 2D (x, y)
+- Slower: Must check collision along curves
+- Needs accurate vehicle model parameters</code></pre>
+
+        <h3>Custom Planner Plugin</h3>
+        <pre><code class="cpp">// my_planner.hpp
+#include "nav2_core/global_planner.hpp"
+
+namespace my_planner {
+
+class MyPlanner : public nav2_core::GlobalPlanner {
+public:
+    void configure(
+        const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+        std::string name,
+        std::shared_ptr<tf2_ros::Buffer> tf,
+        std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override {
+        
+        node_ = parent.lock();
+        name_ = name;
+        tf_ = tf;
+        costmap_ = costmap_ros->getCostmap();
+        
+        // Declare parameters
+        node_->declare_parameter(name + ".tolerance", 0.5);
+    }
+    
+    nav_msgs::msg::Path createPlan(
+        const geometry_msgs::msg::PoseStamped & start,
+        const geometry_msgs::msg::PoseStamped & goal) override {
+        
+        nav_msgs::msg::Path path;
+        path.header.frame_id = ____;  // "map"
+        path.header.stamp = node_->now();
+        
+        // Your planning algorithm here
+        // 1. Convert start/goal to costmap coordinates
+        // 2. Run search (A*, RRT, etc.)
+        // 3. Convert result to poses
+        
+        auto poses = compute_path_algorithm(start, goal);
+        path.poses = poses;
+        
+        return path;
+    }
+};
+
+} // namespace</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Planning Timeout</h3>
+        <pre><code class="yaml">planner_server:
+  ros__parameters:
+    # Max time for planner to compute path
+    planner_patience: 5.0  # seconds
+    
+    # Per-planner timeouts
+    GridBased:
+      max_planning_time: ____  # 2.0 seconds
+    
+    SmacHybrid:
+      max_planning_time: 5.0  # Slower planner needs more time</code></pre>
+
+        <h3>Goal Tolerance</h3>
+        <pre><code class="yaml"># Allow planner to satisfy goal within tolerance
+GridBased:
+  tolerance: 0.5  # Can stop within 0.5m of exact goal
+  
+# For precise goals (docking):
+SmacHybrid:
+  tolerance: ____  # 0.1 meter</code></pre>
+
+        <h3>Unknown Space Handling</h3>
+        <pre><code class="yaml"># Control planning through unexplored areas
+GridBased:
+  allow_unknown: false  # Require fully explored path
+  
+# For exploration:
+GridBased:
+  allow_unknown: ____  # true (can plan to frontiers)</code></pre>
+
+        <h3>Smac Tuning for Vehicle Type</h3>
+        <pre><code class="yaml"># Differential drive (TurtleBot)
+SmacHybrid:
+  minimum_turning_radius: 0.2  # Tight turns
+  reverse_penalty: 5.0  # Strongly prefer forward
+  
+# Ackermann (car)
+SmacHybrid:
+  minimum_turning_radius: ____  # 2.0 (like real car)
+  reverse_penalty: 2.0  # Allow backing up
+  analytic_expansion_ratio: 3.5  # Try shortcuts more often</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Verify planner server running
+ros2 node list | grep planner
+# Expected: /planner_server
+
+# Check available planners
+ros2 param get /planner_server planner_plugins
+# Expected: List of configured planner IDs
+
+# Test planner service
+ros2 service call /compute_path_to_pose nav2_msgs/srv/ComputePathToPose \
+  "{start: {header: {frame_id: 'map'}, pose: {position: {x: 0.0}}},
+    goal: {header: {frame_id: 'map'}, pose: {position: {x: 5.0, y: 3.0}}},
+    planner_id: 'GridBased'}"
+# Expected: Returns path with poses
+
+# Monitor planning time
+ros2 topic echo /plan --once
+# Check header.stamp for planning duration
+
+# Test impossible goal (inside obstacle)
+ros2 service call /compute_path_to_pose nav2_msgs/srv/ComputePathToPose \
+  "{goal: {header: {frame_id: 'map'}, pose: {position: {x: 100.0, y: 100.0}}}}"
+# Expected: Returns empty path or error</code></pre>
+
+        <h3>Benchmark Planners</h3>
+        <pre><code class="python"># benchmark_planners.py
+import rclpy
+from rclpy.node import Node
+from nav2_msgs.srv import ComputePathToPose
+from geometry_msgs.msg import PoseStamped
+import time
+
+class PlannerBenchmark(Node):
+    def __init__(self):
+        super().__init__('planner_benchmark')
+        self.client = self.create_service_client(
+            ComputePathToPose, '/compute_path_to_pose')
+    
+    def benchmark(self, planner_id, start, goal):
+        request = ComputePathToPose.Request()
+        request.start.header.frame_id = 'map'
+        request.goal.header.frame_id = 'map'
+        request.start.pose.position.x = start[0]
+        request.start.pose.position.y = start[1]
+        request.goal.pose.position.x = goal[0]
+        request.goal.pose.position.y = goal[1]
+        request.planner_id = planner_id
+        
+        start_time = time.time()
+        future = self.client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        elapsed = time.time() - start_time
+        
+        result = future.result()
+        path_length = len(result.path.poses)
+        
+        self.get_logger().info(
+            f'{planner_id}: {elapsed*1000:.1f}ms, {path_length} waypoints')
+
+# Test:
+# node.benchmark('GridBased', (0, 0), (10, 10))
+# node.benchmark('SmacHybrid', (0, 0), (10, 10))</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use NavFn for initial path, then switch to Smac for refinement. In BT: ComputePathToPose with GridBased (fast), if controller fails, replan with SmacHybrid (better quality).</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Planning Timeout</h3>
+        <p><strong>Symptom:</strong> "Planner timed out" error, no path returned even though path exists.</p>
+        <p><strong>Root Cause:</strong> Complex environment, planner too slow, or costmap too large/fine-resolution.</p>
+        <p><strong>Fix:</strong> Increase timeout or optimize costmap:</p>
+        <pre><code class="yaml"># Increase planning time
+SmacHybrid:
+  max_planning_time: 10.0  # Was 5.0
+
+# OR reduce search space
+global_costmap:
+  global_costmap:
+    resolution: 0.1  # Was 0.05 (coarser = faster)
+    
+# OR downsample for planning
+SmacHybrid:
+  downsample_costmap: ____  # true
+  downsampling_factor: 2  # Use half resolution</code></pre>
+
+        <h3>Failure 2: Path Too Close to Obstacles</h3>
+        <p><strong>Symptom:</strong> Planner returns path but controller can't follow (robot too close to walls).</p>
+        <p><strong>Root Cause:</strong> Planner uses costmap without considering controller's safety margins.</p>
+        <p><strong>Fix:</strong> Increase costmap inflation for planning:</p>
+        <pre><code class="yaml"># In global_costmap inflation layer
+inflation_layer:
+  inflation_radius: 0.8  # Was 0.5 (increase for planning)
+  cost_scaling_factor: 3.0
+  
+# Planner will now avoid inflated areas
+# Alternatively, use separate planning costmap with larger inflation</code></pre>
+
+        <h3>Failure 3: Smac Returns Infeasible Path</h3>
+        <p><strong>Symptom:</strong> Smac Hybrid-A* path has turns sharper than robot can execute.</p>
+        <p><strong>Root Cause:</strong> Incorrect minimum_turning_radius parameter.</p>
+        <p><strong>Fix:</strong> Measure and set actual turning radius:</p>
+        <pre><code class="bash"># Measure robot's turning radius:
+# 1. Drive robot in circle at max steering
+# 2. Measure diameter, divide by 2
+
+# Update config
+SmacHybrid:
+  minimum_turning_radius: ____  # 1.5 (measured value)
+  
+# Verify: Send goal requiring tight turn
+# Path should now have feasible curvature</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Set Impossible Goal and Observe</h3>
+        <p>Request path to unreachable location:</p>
+
+        <pre><code class="bash"># Terminal 1: Launch Nav2
+ros2 launch nav2_bringup navigation_launch.py map:=mymap.yaml
+
+# Terminal 2: Set goal inside obstacle or outside map
+ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
+  "{pose: {header: {frame_id: 'map'}, 
+           pose: {position: {x: ____, y: 1000.0}}}}"  # 1000.0 (way outside map)
+
+# Observe:
+# - Planner attempts computation
+# - Returns failure after timeout
+# - bt_navigator triggers recovery behaviors
+# - Eventually aborts goal</code></pre>
+
+        <p><strong>Detection:</strong> Monitor planner diagnostics:</p>
+        <pre><code class="bash">ros2 topic echo /diagnostics | grep planner
+# Look for "Planning failed" or "Timeout" status
+
+# Check service response
+ros2 service call /compute_path_to_pose ... 
+# Response has empty path.poses array when planning fails</code></pre>
+
+        <p><strong>Recovery:</strong> Behavior tree handles failure:</p>
+        <pre><code class="xml">&lt;!-- BT recovery pattern --&gt;
+&lt;RecoveryNode number_of_retries="3"&gt;
+  &lt;ComputePathToPose .../&gt;
+  
+  &lt;!-- On failure: --&gt;
+  &lt;SequenceStar&gt;
+    &lt;ClearCostmap/&gt;  &lt;!-- Maybe obstacle is stale --&gt;
+    &lt;Wait duration="2"/&gt;  &lt;!-- Let costmap update --&gt;
+  &lt;/SequenceStar&gt;
+&lt;/RecoveryNode&gt;</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Smac planners cache analytic expansions for performance. If robot parameters change at runtime, restart planner_server to clear cache, or paths may be infeasible.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build advanced planning capabilities:</p>
+
+        <ol>
+          <li>Implement custom planner plugin using RRT* or PRM algorithm</li>
+          <li>Add multi-goal planning (traveling salesman problem solver)</li>
+          <li>Create path quality metrics (smoothness, clearance, length)</li>
+          <li>Build alternative path generator for redundant routes</li>
+          <li>Implement dynamic replanning with path deformation (elastic bands)</li>
+          <li>Add semantic planning (prefer certain zones, avoid slippery areas)</li>
+          <li>Create visualization tool showing search tree expansion in real-time</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="controllers.html">Controllers</a> - Track planned paths</li>
+          <li><a href="costmaps.html">Costmaps</a> - Understanding obstacle representation</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - Integration with navigation</li>
+          <li><a href="bt.html">Behavior Trees</a> - Orchestrate replanning logic</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official planner docs: <code>navigation.ros.org/configuration/packages/configuring-planners.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="costmaps.html" class="prev">Costmaps</a>
+        <a href="controllers.html" class="next">Controllers</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

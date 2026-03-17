@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnostics - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html" class="active">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#ops">Ops &amp; Quality</a> &gt; Diagnostics
+      </nav>
+
+      <h1 class="page-title">Diagnostics (Health Monitoring)</h1>
+      <p class="page-outcome">Monitor robot health with diagnostic updaters, aggregators, and alerts.</p>
+
+      <div class="pills">
+        <span class="pill pill-diagnostics">Health Check</span>
+        <span class="pill pill-monitor">Monitoring</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>ROS2 diagnostics framework monitors robot health through <code>diagnostic_updater</code> and <code>diagnostic_aggregator</code>. Diagnostic updaters publish status messages: OK, WARN, ERROR, STALE. Each diagnostic has key-value pairs (temperature: 45°C, voltage: 12.1V). Diagnostic aggregator collects status from multiple nodes, groups by category (sensors, motors, battery), and publishes aggregated health on <code>/diagnostics_agg</code>. RViz displays diagnostic status with color-coded tree. <code>rqt_robot_monitor</code> shows real-time alerts. Diagnostics enable proactive maintenance - detect degraded sensors before failure.</p>
+
+        <h3>Why</h3>
+        <p>Robots fail silently - wheel encoder stops, battery degrades, sensor saturates. Diagnostics surface these issues before mission failure. Aggregated view prevents alert fatigue - see "3 sensors degraded" instead of scrolling through 50 topics. Diagnostic logs enable root cause analysis - correlate navigation failure with low battery 2 minutes earlier. Threshold-based alerts (temp > 70°C) trigger cooling, human intervention. Fleet monitoring systems (10+ robots) rely on diagnostics for centralized health dashboards.</p>
+
+        <h3>When</h3>
+        <p>Add diagnostics to all hardware interfaces (cameras, lidars, motors, batteries). Publish status at 1-5 Hz. Thresholds: WARN at 80% of limit (temperature, voltage), ERROR at 95%. Use updater for per-node diagnostics (camera framerate, IMU noise). Use aggregator for system-level view (all sensors healthy?). Diagnostic messages are cheap - OK status is 100 bytes. Always log diagnostics to bag files for post-mission analysis. Integrate with external monitoring (Prometheus, Grafana) for fleet management.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Diagnostic Status Levels</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Level</th>
+              <th>Value</th>
+              <th>Meaning</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>OK</td>
+              <td>0</td>
+              <td>System healthy</td>
+              <td>None - continue operation</td>
+            </tr>
+            <tr>
+              <td>WARN</td>
+              <td>1</td>
+              <td>Degraded but functional</td>
+              <td>Log warning, schedule maintenance</td>
+            </tr>
+            <tr>
+              <td>ERROR</td>
+              <td>2</td>
+              <td>Critical failure</td>
+              <td>Alert operator, abort mission if needed</td>
+            </tr>
+            <tr>
+              <td>STALE</td>
+              <td>3</td>
+              <td>No update received</td>
+              <td>Check if node crashed, network issue</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Basic Diagnostic Updater (C++)</h3>
+        <pre><code class="cpp">// my_sensor_node.cpp
+#include "rclcpp/rclcpp.hpp"
+#include "diagnostic_updater/diagnostic_updater.hpp"
+#include "diagnostic_updater/publisher.hpp"
+
+class MySensorNode : public rclcpp::Node {
+public:
+    MySensorNode() : Node("my_sensor") {
+        // Create diagnostic updater
+        updater_.setHardwareID("sensor_v1");
+        
+        // Add diagnostic task
+        updater_.add("Sensor Status", this, &MySensorNode::check_sensor);
+        
+        // Update diagnostics at 1 Hz
+        timer_ = create_wall_timer(
+            std::chrono::seconds(1),
+            [this]() { updater_.force_update(); }
+        );
+    }
+
+private:
+    void check_sensor(diagnostic_updater::DiagnosticStatusWrapper &stat) {
+        double temp = read_temperature();  // Your sensor code
+        
+        if (temp < 60.0) {
+            stat.summary(____, "Temperature normal");  // diagnostic_msgs::msg::DiagnosticStatus::OK
+            stat.add("Temperature", temp);
+            stat.add("Unit", "Celsius");
+        } else if (temp < 75.0) {
+            stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, 
+                         "Temperature high");
+            stat.add("Temperature", temp);
+        } else {
+            stat.summary(diagnostic_msgs::msg::DiagnosticStatus::____, 
+                         "Temperature critical");  // ERROR
+            stat.add("Temperature", temp);
+            stat.add("Action", "Shutdown recommended");
+        }
+    }
+    
+    diagnostic_updater::Updater updater_{this};
+    rclcpp::TimerBase::SharedPtr timer_;
+};
+
+int main(int argc, char** argv) {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<MySensorNode>());
+    rclcpp::shutdown();
+    return 0;
+}</code></pre>
+
+        <h3>Diagnostic Updater (Python)</h3>
+        <pre><code class="python">#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from diagnostic_updater import Updater, DiagnosticStatusWrapper
+from diagnostic_msgs.msg import DiagnosticStatus
+
+class MySensorNode(Node):
+    def __init__(self):
+        super().__init__('my_sensor')
+        
+        # Create updater
+        self.updater = Updater(self)
+        self.updater.setHardwareID("sensor_v1")
+        
+        # Add diagnostic task
+        self.updater.add("Sensor Status", self.check_sensor)
+        
+        # Timer to trigger updates
+        self.timer = self.create_timer(1.0, self.update_diagnostics)
+    
+    def check_sensor(self, stat: DiagnosticStatusWrapper):
+        temp = self.read_temperature()
+        
+        if temp < 60.0:
+            stat.summary(____, "Temperature normal")  # DiagnosticStatus.OK
+            stat.add("Temperature", f"{temp:.1f}")
+            stat.add("Unit", "Celsius")
+        elif temp < 75.0:
+            stat.summary(DiagnosticStatus.WARN, "Temperature high")
+            stat.add("Temperature", f"{temp:.1f}")
+        else:
+            stat.summary(DiagnosticStatus.ERROR, "Temperature critical")
+            stat.add("Temperature", f"{temp:.1f}")
+            stat.add("Action", "Shutdown recommended")
+        
+        return stat
+    
+    def update_diagnostics(self):
+        self.updater.force_update()
+    
+    def read_temperature(self):
+        # Your sensor reading code
+        return 45.0
+
+def main():
+    rclpy.init()
+    node = MySensorNode()
+    rclpy.spin(node)
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Diagnostic Aggregator)</h2>
+
+        <h3>Aggregator Configuration</h3>
+        <pre><code class="yaml"># diagnostic_aggregator.yaml
+diagnostic_aggregator:
+  ros__parameters:
+    # Base path for aggregated diagnostics
+    base_path: ''
+    
+    # Aggregation rules
+    analyzers:
+      # Group all sensors
+      sensors:
+        type: diagnostic_aggregator/AnalyzerGroup
+        path: Sensors
+        analyzers:
+          camera:
+            type: diagnostic_aggregator/GenericAnalyzer
+            path: Camera
+            contains: ['camera']  # Match any diagnostic with 'camera' in name
+          lidar:
+            type: diagnostic_aggregator/GenericAnalyzer
+            path: Lidar
+            contains: ['____']  # lidar, scan
+      
+      # Group all motors
+      motors:
+        type: diagnostic_aggregator/AnalyzerGroup
+        path: Motors
+        analyzers:
+          wheels:
+            type: diagnostic_aggregator/GenericAnalyzer
+            path: Wheels
+            contains: ['wheel', 'motor']
+      
+      # Battery monitoring
+      power:
+        type: diagnostic_aggregator/GenericAnalyzer
+        path: Power
+        contains: ['battery', 'voltage']</code></pre>
+
+        <h3>Launch Aggregator</h3>
+        <pre><code class="python"># launch/diagnostics.launch.py
+from launch import LaunchDescription
+from launch_ros.actions import Node
+import os
+from ament_index_python.packages import get_package_share_directory
+
+def generate_launch_description():
+    config = os.path.join(
+        get_package_share_directory('my_pkg'),
+        'config',
+        'diagnostic_aggregator.yaml'
+    )
+    
+    return LaunchDescription([
+        Node(
+            package='diagnostic_aggregator',
+            executable='aggregator_node',
+            name='diagnostic_aggregator',
+            parameters=[____],  # config
+            output='screen'
+        )
+    ])</code></pre>
+
+        <h3>Frequency Diagnostic (Monitor Update Rate)</h3>
+        <pre><code class="cpp">#include "diagnostic_updater/diagnostic_updater.hpp"
+#include "diagnostic_updater/publisher.hpp"
+
+class CameraNode : public rclcpp::Node {
+public:
+    CameraNode() : Node("camera_node") {
+        pub_ = create_publisher<sensor_msgs::msg::Image>("image", 10);
+        
+        // Monitor publisher frequency
+        min_freq_ = 25.0;  // Expect 30 Hz, warn below 25
+        max_freq_ = 35.0;  // Warn above 35
+        
+        freq_diag_ = std::make_unique<diagnostic_updater::HeaderlessTopicDiagnostic>(
+            "image", updater_,
+            diagnostic_updater::FrequencyStatusParam(&min_freq_, &max_freq_)
+        );
+        
+        updater_.setHardwareID("camera_v2");
+    }
+    
+    void publish_image(const sensor_msgs::msg::Image& img) {
+        pub_->publish(img);
+        freq_diag_->tick();  // Record publish event
+    }
+
+private:
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pub_;
+    diagnostic_updater::Updater updater_{this};
+    std::unique_ptr<diagnostic_updater::HeaderlessTopicDiagnostic> freq_diag_;
+    double min_freq_, max_freq_;
+};</code></pre>
+
+        <h3>Custom Diagnostic Task</h3>
+        <pre><code class="cpp">class BatteryMonitor {
+public:
+    void check_battery(diagnostic_updater::DiagnosticStatusWrapper &stat) {
+        double voltage = read_battery_voltage();
+        double current = read_battery_current();
+        double soc = estimate_state_of_charge();  // 0-100%
+        
+        // Determine status
+        if (soc > 20.0 && voltage > 11.5) {
+            stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, 
+                         "Battery healthy");
+        } else if (soc > 10.0) {
+            stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN,
+                         "Battery low - return to dock soon");
+        } else {
+            stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR,
+                         "Battery critical - return to dock immediately");
+        }
+        
+        // Add detailed info
+        stat.add("Voltage (V)", voltage);
+        stat.add("Current (A)", ____);  // current
+        stat.add("State of Charge (%)", soc);
+        stat.add("Estimated Runtime (min)", estimate_runtime());
+    }
+};</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>CMakeLists.txt Dependencies</h3>
+        <pre><code class="cmake">find_package(diagnostic_updater REQUIRED)
+find_package(diagnostic_msgs REQUIRED)
+
+ament_target_dependencies(my_node
+  rclcpp
+  diagnostic_updater
+  ____  # diagnostic_msgs
+)</code></pre>
+
+        <h3>Package.xml Dependencies</h3>
+        <pre><code class="xml">&lt;depend&gt;diagnostic_updater&lt;/depend&gt;
+&lt;depend&gt;diagnostic_msgs&lt;/depend&gt;
+&lt;exec_depend&gt;diagnostic_aggregator&lt;/exec_depend&gt;</code></pre>
+
+        <h3>Diagnostic Topics</h3>
+        <pre><code class="bash"># Raw diagnostics from each node
+/diagnostics              # diagnostic_msgs/DiagnosticArray
+
+# Aggregated diagnostics
+/diagnostics_agg          # All diagnostics grouped by analyzer
+
+# Top-level summary
+/diagnostics_toplevel_state  # Overall system health (OK/WARN/ERROR)</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># View raw diagnostics
+ros2 topic echo /diagnostics
+# Shows all diagnostic messages
+
+# View aggregated diagnostics
+ros2 topic echo /____  # diagnostics_agg
+
+# Check diagnostic frequency
+ros2 topic hz /diagnostics
+# Should be 1-5 Hz
+
+# List diagnostic sources
+ros2 topic echo /diagnostics --once | grep "name:"
+# Shows all diagnostic tasks
+
+# Check for errors
+ros2 topic echo /diagnostics | grep "ERROR"</code></pre>
+
+        <h3>RViz Visualization</h3>
+        <pre><code class="bash"># Launch RViz with robot monitor
+rviz2
+
+# Add display:
+# - Type: RobotModel (show robot)
+# - Type: DiagnosticStatus
+#   Topic: /diagnostics_agg
+
+# Diagnostic display shows:
+# - Green: OK
+# - Yellow: WARN
+# - Red: ERROR
+# - Gray: STALE</code></pre>
+
+        <h3>rqt_robot_monitor</h3>
+        <pre><code class="bash"># Launch robot monitor GUI
+ros2 run rqt_robot_monitor rqt_robot_monitor
+
+# Features:
+# - Tree view of all diagnostics
+# - Alert notifications
+# - Historical trends
+# - Filter by status (show only WARN/ERROR)</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Record diagnostics in every bag file: <code>ros2 bag record -a</code> includes <code>/diagnostics</code>. During failure analysis, replay bag and watch diagnostics to see exactly when battery/sensor/motor degraded.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Diagnostics Always STALE</h3>
+        <p><strong>Symptom:</strong> All diagnostics show STALE status despite node running.</p>
+        <p><strong>Root Cause:</strong> Forgot to call <code>updater.force_update()</code> periodically.</p>
+        <p><strong>Fix:</strong> Add timer to trigger updates:</p>
+        <pre><code class="python"># Missing periodic update
+def __init__(self):
+    self.updater = Updater(self)
+    self.updater.add("Status", self.check_status)
+    # No timer! Updater never called.
+
+# Fixed version
+def __init__(self):
+    self.updater = Updater(self)
+    self.updater.add("Status", self.check_status)
+    
+    # Add timer
+    self.timer = self.create_timer(____, self.updater.force_update)  # 1.0 Hz</code></pre>
+
+        <h3>Failure 2: Aggregator Not Grouping Diagnostics</h3>
+        <p><strong>Symptom:</strong> Diagnostics appear flat, not grouped by category.</p>
+        <p><strong>Root Cause:</strong> Analyzer path doesn't match diagnostic names.</p>
+        <p><strong>Fix:</strong> Check name matching:</p>
+        <pre><code class="yaml"># Aggregator config
+sensors:
+  type: diagnostic_aggregator/GenericAnalyzer
+  path: Sensors
+  contains: ['camera']  # Matches 'camera_front', 'camera_back'
+
+# Your diagnostic updater must have matching name
+updater_.add("____", this, &check);  # camera_front (matches!)</code></pre>
+
+        <pre><code class="bash"># Debug: check diagnostic names
+ros2 topic echo /diagnostics --once | grep "name:"
+# Ensure names contain expected keywords</code></pre>
+
+        <h3>Failure 3: Diagnostic Overhead Too High</h3>
+        <p><strong>Symptom:</strong> Node slow, high CPU usage when diagnostics enabled.</p>
+        <p><strong>Root Cause:</strong> Diagnostic update rate too high or expensive computation in diagnostic callback.</p>
+        <p><strong>Fix:</strong> Reduce frequency and optimize callback:</p>
+        <pre><code class="cpp">// Bad: update at 100 Hz with expensive check
+timer_ = create_wall_timer(
+    std::chrono::milliseconds(10),  // 100 Hz - too fast!
+    [this]() {
+        run_expensive_test();  // Slow!
+        updater_.force_update();
+    }
+);
+
+// Good: update at 1 Hz with cached data
+timer_ = create_wall_timer(
+    std::chrono::seconds(____),  // 1 Hz
+    [this]() { updater_.force_update(); }
+);
+
+void check_status(diagnostic_updater::DiagnosticStatusWrapper &stat) {
+    // Use cached sensor data, don't read hardware here
+    stat.add("Temperature", cached_temp_);
+}</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Forget Hardware ID</h3>
+        <p>Create diagnostic updater without setting hardware ID:</p>
+
+        <pre><code class="cpp">// Intentional error
+MySensorNode() : Node("my_sensor") {
+    // updater_.setHardwareID("sensor_v1");  // MISSING!
+    updater_.add("Sensor Status", this, &MySensorNode::check_sensor);
+}</code></pre>
+
+        <p><strong>Observe:</strong></p>
+        <pre><code class="bash">ros2 topic echo /diagnostics
+# Output shows:
+# hardware_id: ""  # Empty!
+
+# In aggregator or rqt_robot_monitor:
+# Diagnostic appears under "Unknown Hardware ID"</code></pre>
+
+        <p><strong>Detection:</strong> Check for empty hardware_id:</p>
+        <pre><code class="bash">ros2 topic echo /diagnostics | grep "hardware_id: \"\""</code></pre>
+
+        <p><strong>Recovery:</strong></p>
+        <pre><code class="cpp">MySensorNode() : Node("my_sensor") {
+    updater_.setHardwareID("____");  // sensor_v1
+    updater_.add("Sensor Status", this, &MySensorNode::check_sensor);
+}</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Hardware ID helps identify which physical device has issues in multi-robot fleets. Always set unique IDs: <code>robot_01_lidar_front</code>, not just <code>lidar</code>.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build advanced diagnostic systems:</p>
+
+        <ol>
+          <li>Create predictive diagnostics using ML (predict battery failure 10 minutes ahead)</li>
+          <li>Build diagnostic dashboard with historical trends (Grafana + InfluxDB)</li>
+          <li>Implement automatic recovery actions triggered by diagnostics (ERROR → stop, WARN → slow down)</li>
+          <li>Create diagnostic anomaly detection (flag unusual sensor patterns)</li>
+          <li>Build fleet-wide diagnostic aggregation (monitor 50 robots from single dashboard)</li>
+          <li>Implement diagnostic-based mission planning (avoid routes with degraded sensors)</li>
+          <li>Create self-healing system (automatic sensor calibration on WARN status)</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="dds.html">DDS &amp; Discovery</a> - Next: Network layer and middleware</li>
+          <li><a href="testing.html">Testing</a> - Test diagnostic behaviors</li>
+          <li><a href="bag.html">Bag Recording</a> - Record diagnostics for analysis</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>diagnostic_updater API: <code>docs.ros.org/en/humble/p/diagnostic_updater</code></p>
+          <p>diagnostic_aggregator config: <code>wiki.ros.org/diagnostic_aggregator</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="testing.html" class="prev">Testing</a>
+        <a href="dds.html" class="next">DDS &amp; Discovery</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

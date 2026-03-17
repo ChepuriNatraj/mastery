@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recovery Behaviors - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html" class="active">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#slam">SLAM &amp; Nav2</a> &gt; Recovery Behaviors
+      </nav>
+
+      <h1 class="page-title">Recovery Behaviors</h1>
+      <p class="page-outcome">Unstick robots with systematic recovery actions when navigation fails.</p>
+
+      <div class="pills">
+        <span class="pill pill-nav2">Nav2</span>
+        <span class="pill pill-recovery">Fault Handling</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Recovery behaviors are atomic actions executed when navigation fails. Nav2 provides built-in recoveries: Spin (rotate in place), BackUp (reverse), Wait (pause), ClearCostmap (reset obstacle data). Each recovery is a ROS2 action server. Behavior trees trigger recoveries through RecoveryNode with configurable retry counts. Recovery sequences chain multiple actions (e.g., clear costmap → spin → retry navigation). Recovery plugins are modular - add custom behaviors like LED signals, sound alerts, or request human help. Recoveries prevent complete mission failure by resolving local stuck conditions.</p>
+
+        <h3>Why</h3>
+        <p>Navigation fails for recoverable reasons: temporary sensor glitches (clear costmap), robot orientation issues (spin), insufficient clearance (backup). Without recoveries, single failures abort missions. Recovery behaviors provide systematic debugging - each action tests a hypothesis about failure cause. Spin helps with localization uncertainty. BackUp creates space in tight spots. Wait allows dynamic obstacles to clear. Clearing costmaps removes phantom obstacles from sensor noise. Recovery data (which actions worked) improves mission planning.</p>
+
+        <h3>When</h3>
+        <p>Use recoveries in all navigation BT trees - wrap FollowPath with RecoveryNode. Configure retry counts based on environment: tight spaces need fewer retries (3) to avoid oscillation, open areas can try more (5-6). Add timeout-based recoveries for stuck detection. Use clearing behaviors after sensor errors or kidnapped robot. Don't over-rely on recoveries - if spinning 6 times doesn't work, the issue is deeper (bad map, hardware failure). Log recovery triggers to identify navigation weakness patterns.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Built-in Recovery Actions</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Recovery</th>
+              <th>Purpose</th>
+              <th>Parameters</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Spin</code></td>
+              <td>Rotate in place</td>
+              <td><code>spin_dist</code> (radians)</td>
+              <td>Localization uncertainty, sensor refresh</td>
+            </tr>
+            <tr>
+              <td><code>BackUp</code></td>
+              <td>Reverse direction</td>
+              <td><code>backup_dist</code> (m), <code>backup_speed</code></td>
+              <td>Stuck in narrow passage, too close to obstacle</td>
+            </tr>
+            <tr>
+              <td><code>Wait</code></td>
+              <td>Pause execution</td>
+              <td><code>wait_duration</code> (sec)</td>
+              <td>Dynamic obstacles, temporary blockage</td>
+            </tr>
+            <tr>
+              <td><code>ClearCostmap</code></td>
+              <td>Reset obstacle data</td>
+              <td><code>service_name</code></td>
+              <td>Sensor glitches, phantom obstacles</td>
+            </tr>
+            <tr>
+              <td><code>DriveOnHeading</code></td>
+              <td>Move straight distance</td>
+              <td><code>dist_to_travel</code>, <code>speed</code></td>
+              <td>Escape local minimum</td>
+            </tr>
+            <tr>
+              <td><code>AssistedTeleop</code></td>
+              <td>Human joystick control</td>
+              <td><code>time_allowance</code></td>
+              <td>Complex stuck situations</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Basic Recovery Sequence in BT</h3>
+        <pre><code class="xml">&lt;RecoveryNode number_of_retries="4" name="NavigateRecovery"&gt;
+  
+  &lt;!-- Main navigation behavior --&gt;
+  &lt;FollowPath path="{path}" controller_id="FollowPath"/&gt;
+  
+  &lt;!-- Recovery sequence on failure --&gt;
+  &lt;SequenceStar name="RecoverySequence"&gt;
+    
+    &lt;!-- Clear local costmap (removes phantom obstacles) --&gt;
+    &lt;ClearEntireCostmap 
+      name="ClearLocal"
+      service_name="____"/&gt;  &lt;!-- local_costmap/clear_entirely_local_costmap --&gt;
+    
+    &lt;!-- Spin 90 degrees (refresh sensors) --&gt;
+    &lt;Spin spin_dist="1.57" name="Spin90"/&gt;
+    
+    &lt;!-- Wait for dynamic obstacles to move --&gt;
+    &lt;Wait wait_duration="____" name="Wait5s"/&gt;  &lt;!-- 5 --&gt;
+    
+  &lt;/SequenceStar&gt;
+  
+&lt;/RecoveryNode&gt;</code></pre>
+
+        <h3>Spin Recovery Configuration</h3>
+        <pre><code class="yaml">spin:
+  ros__parameters:
+    simulate_ahead_time: 2.0  # Seconds to simulate spin trajectory
+    
+    max_rotational_vel: 1.0  # rad/s
+    min_rotational_vel: 0.4
+    
+    rotational_acc_lim: ____  # 3.2 rad/s²
+    
+    # Collision checking
+    enable_collision_checking: true
+    
+    # Transform tolerance
+    transform_tolerance: 0.1</code></pre>
+
+        <h3>BackUp Recovery Configuration</h3>
+        <pre><code class="yaml">backup:
+  ros__parameters:
+    simulate_ahead_time: 2.0  # Check for collisions during backup
+    
+    backup_dist: 0.3  # meters (default)
+    backup_speed: 0.05  # m/s (slow for safety)
+    
+    # Collision checking
+    enable_collision_checking: ____  # true
+    
+    # Time allowance before timeout
+    time_allowance: 10.0  # seconds</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Recovery Action Server)</h2>
+
+        <h3>Recovery Action Interface</h3>
+        <pre><code class="bash"># Spin action definition (nav2_msgs/action/Spin.action)
+# Goal
+float32 target_yaw  # Radians to spin
+---
+# Result
+std_msgs/Empty
+---
+# Feedback
+float32 angular_distance_traveled  # Progress</code></pre>
+
+        <h3>Calling Recovery Action (Python)</h3>
+        <pre><code class="python">#!/usr/bin/env python3
+import rclpy
+from rclpy.action import ActionClient
+from rclpy.node import Node
+from nav2_msgs.action import Spin
+import math
+
+class RecoveryClient(Node):
+    def __init__(self):
+        super().__init__('recovery_client')
+        self.spin_client = ActionClient(self, Spin, '____')  # /spin
+    
+    def send_spin_goal(self, angle_radians):
+        # Wait for action server
+        self.spin_client.wait_for_server()
+        
+        # Create goal
+        goal = Spin.Goal()
+        goal.target_yaw = angle_radians
+        
+        # Send goal
+        future = self.spin_client.send_goal_async(
+            goal,
+            feedback_callback=self.feedback_callback
+        )
+        future.add_done_callback(self.goal_response_callback)
+    
+    def feedback_callback(self, feedback_msg):
+        feedback = feedback_msg.feedback
+        self.get_logger().info(
+            f'Spun {feedback.angular_distance_traveled:.2f} rad'
+        )
+    
+    def goal_response_callback(self, future):
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().error('Goal rejected')
+            return
+        
+        # Wait for result
+        result_future = goal_handle.get_result_async()
+        result_future.add_done_callback(self.result_callback)
+    
+    def result_callback(self, future):
+        result = future.result().result
+        self.get_logger().info('Spin recovery complete!')
+
+def main():
+    rclpy.init()
+    node = RecoveryClient()
+    
+    # Spin 180 degrees
+    node.send_spin_goal(____)  # math.pi
+    
+    rclpy.spin(node)
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+
+        <h3>Custom Recovery Plugin (C++)</h3>
+        <pre><code class="cpp">// my_recovery_behavior.hpp
+#include "nav2_core/recovery.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+
+namespace my_recovery {
+
+class MyRecoveryBehavior : public nav2_core::Recovery {
+public:
+    void configure(
+        const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+        const std::string & name,
+        std::shared_ptr<tf2_ros::Buffer> tf,
+        std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
+        std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub
+    ) override {
+        node_ = parent;
+        name_ = name;
+        
+        // Create velocity publisher
+        auto node = node_.lock();
+        vel_pub_ = node->create_publisher<geometry_msgs::msg::Twist>(
+            "cmd_vel", 10
+        );
+        
+        // Get parameters
+        node->get_parameter("recovery_duration", duration_);
+    }
+    
+    Status cycleBehavior() override {
+        auto node = node_.lock();
+        
+        // Execute recovery action
+        geometry_msgs::msg::Twist cmd_vel;
+        cmd_vel.linear.x = 0.0;
+        cmd_vel.angular.z = ____;  // 0.5 rad/s (turn slowly)
+        
+        vel_pub_->publish(cmd_vel);
+        
+        // Check if recovery complete
+        if (elapsed_time() > duration_) {
+            return Status::SUCCEEDED;
+        }
+        
+        return Status::RUNNING;
+    }
+    
+    void cleanup() override {
+        vel_pub_.reset();
+    }
+    
+    void activate() override {}
+    void deactivate() override {}
+
+private:
+    rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+    std::string name_;
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+    double duration_;
+};
+
+} // namespace
+
+// Export plugin
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(
+    my_recovery::MyRecoveryBehavior,
+    nav2_core::Recovery
+)</code></pre>
+
+        <h3>Recovery Behavior Server Configuration</h3>
+        <pre><code class="yaml">behavior_server:
+  ros__parameters:
+    costmap_topic: local_costmap/costmap_raw
+    footprint_topic: local_costmap/published_footprint
+    cycle_frequency: 10.0  # Hz
+    
+    # Recovery plugin names
+    behavior_plugins: ["spin", "backup", "wait", "my_custom_recovery"]
+    
+    # Plugin configurations
+    spin:
+      plugin: "nav2_behaviors/Spin"
+    backup:
+      plugin: "nav2_behaviors/BackUp"
+    wait:
+      plugin: "nav2_behaviors/Wait"
+    my_custom_recovery:
+      plugin: "my_package::MyRecoveryBehavior"
+      recovery_duration: ____  # 3.0 seconds</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Clear Costmap Recovery</h3>
+        <pre><code class="yaml"># Three clear costmap variants
+
+# 1. Clear entire costmap
+&lt;ClearEntireCostmap 
+  service_name="local_costmap/clear_entirely_local_costmap"/&gt;
+
+# 2. Clear except keepout zones
+&lt;ClearCostmapExceptRegion
+  service_name="local_costmap/clear_except_____"/&gt;  # region
+
+# 3. Clear around robot (within radius)
+&lt;ClearCostmapAroundRobot
+  service_name="local_costmap/clear_around_robot"
+  reset_distance="1.0"/&gt;  # meters from robot</code></pre>
+
+        <h3>Wait Recovery</h3>
+        <pre><code class="yaml">wait:
+  ros__parameters:
+    wait_duration: 5  # Default duration (overridden by BT)</code></pre>
+        
+        <pre><code class="xml">&lt;!-- In BT, specify duration per-invocation --&gt;
+&lt;Wait wait_duration="____"/&gt;  &lt;!-- 3 seconds --&gt;</code></pre>
+
+        <h3>DriveOnHeading Recovery</h3>
+        <pre><code class="yaml">drive_on_heading:
+  ros__parameters:
+    simulate_ahead_time: 2.0
+    max_linear_vel: 0.5  # m/s
+    min_linear_vel: 0.1
+    linear_acc_lim: 2.5  # m/s²
+    
+    max_angular_vel: 1.0  # rad/s (for heading correction)
+    angular_acc_lim: 3.2
+    
+    enable_collision_checking: true</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Check behavior_server running
+ros2 node list | grep behavior_server
+# Expected: /behavior_server
+
+# List available recovery actions
+ros2 action list | grep -E '(spin|backup|wait)'
+# Expected:
+# /spin
+# /backup
+# /wait
+
+# Test spin recovery
+ros2 action send_goal /spin nav2_msgs/action/Spin \
+  "{target_yaw: 1.57}"  # 90 degrees
+
+# Monitor feedback
+ros2 action send_goal /spin nav2_msgs/action/Spin \
+  "{target_yaw: 3.14}" --feedback
+
+# Test backup recovery
+ros2 action send_goal /backup nav2_msgs/action/BackUp \
+  "{target: {x: ____, y: 0.0, z: 0.0}}"  # -0.3 (reverse 30cm)
+
+# Clear costmap service
+ros2 service call \
+  /local_costmap/clear_entirely_local_costmap \
+  nav2_msgs/srv/ClearEntireCostmap
+
+# Check recovery triggers in logs
+ros2 topic echo /rosout | grep -i recovery
+# Look for "Executing recovery behavior"</code></pre>
+
+        <h3>Recovery Metrics</h3>
+        <pre><code class="bash"># Check how often recoveries are triggered
+# High frequency indicates navigation issues
+
+# Monitor lifecycle state
+ros2 topic echo /behavior_server/transition_event
+
+# Check if recovery succeeded/failed
+ros2 action send_goal /spin nav2_msgs/action/Spin \
+  "{target_yaw: 1.57}" --feedback
+# Result: SUCCESS or ABORTED</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Log recovery triggers to CSV: <code>timestamp, recovery_type, success/failure</code>. Analyze patterns - frequent spin recoveries indicate localization issues, frequent backup means planner produces infeasible paths.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Recovery Causes Collision</h3>
+        <p><strong>Symptom:</strong> Spin or backup recovery crashes robot into obstacle.</p>
+        <p><strong>Root Cause:</strong> Collision checking disabled or costmap outdated.</p>
+        <p><strong>Fix:</strong> Enable collision checking and verify costmap:</p>
+        <pre><code class="yaml">spin:
+  ros__parameters:
+    enable_collision_checking: ____  # true (always enable)
+    simulate_ahead_time: 2.0  # Check full trajectory
+
+backup:
+  ros__parameters:
+    enable_collision_checking: true
+    backup_speed: 0.05  # Slow speed for safety</code></pre>
+        
+        <pre><code class="bash"># Verify costmap has obstacles
+ros2 topic echo /local_costmap/costmap --once
+# Check that lethal_cost == 254 for obstacles
+
+# Visualize costmap in RViz
+rviz2 -d nav2_default_view.rviz
+# Add Map display, topic: /local_costmap/costmap</code></pre>
+
+        <h3>Failure 2: Infinite Recovery Loop</h3>
+        <p><strong>Symptom:</strong> Robot spins, backs up, waits repeatedly without making progress.</p>
+        <p><strong>Root Cause:</strong> Recovery doesn't resolve underlying issue, retry count too high.</p>
+        <p><strong>Fix:</strong> Limit retries and add stuck detection:</p>
+        <pre><code class="xml">&lt;RecoveryNode number_of_retries="____" name="LimitedRecovery"&gt;  &lt;!-- 3 (not 10) --&gt;
+  &lt;FollowPath path="{path}"/&gt;
+  
+  &lt;SequenceStar&gt;
+    &lt;ClearCostmap/&gt;
+    &lt;Spin spin_dist="1.57"/&gt;
+    
+    &lt;!-- Add stuck condition --&gt;
+    &lt;IsStuck/&gt;  &lt;!-- If true, FAIL recovery --&gt;
+  &lt;/SequenceStar&gt;
+&lt;/RecoveryNode&gt;
+
+&lt;!-- Fallback to abort mission --&gt;
+&lt;Fallback&gt;
+  &lt;RecoveryNode .../&gt;
+  &lt;AbortMission/&gt;  &lt;!-- Don't loop forever --&gt;
+&lt;/Fallback&gt;</code></pre>
+
+        <h3>Failure 3: Recovery Action Times Out</h3>
+        <p><strong>Symptom:</strong> Spin/backup action aborts with "Action server timeout".</p>
+        <p><strong>Root Cause:</strong> Slow velocity, large distance, or collision prevents completion.</p>
+        <p><strong>Fix:</strong> Increase time allowance or reduce distance:</p>
+        <pre><code class="yaml">backup:
+  ros__parameters:
+    time_allowance: ____  # 10.0 (increase from default 5.0)
+    backup_dist: 0.2  # Reduce distance if needed</code></pre>
+
+        <pre><code class="bash"># Check if robot is moving during recovery
+ros2 topic echo /cmd_vel
+# Should see non-zero velocities
+
+# If robot not moving, check:
+# 1. Controller enabled?
+# 2. E-stop pressed?
+# 3. Wheel encoders publishing?</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Disable Collision Checking</h3>
+        <p>Force backup recovery to collide with obstacle:</p>
+
+        <pre><code class="yaml"># Intentional error
+backup:
+  ros__parameters:
+    enable_collision_checking: ____  # false (dangerous!)
+    backup_dist: 2.0  # Large distance
+    backup_speed: 0.2  # Fast speed</code></pre>
+
+        <p><strong>Setup:</strong> Place obstacle behind robot.</p>
+        
+        <p><strong>Trigger recovery:</strong></p>
+        <pre><code class="bash">ros2 action send_goal /backup nav2_msgs/action/BackUp \
+  "{target: {x: -2.0, y: 0.0, z: 0.0}}"</code></pre>
+
+        <p><strong>Observe:</strong></p>
+        <ul>
+          <li>Robot backs into obstacle</li>
+          <li>Wheel encoders show slippage</li>
+          <li>Action completes successfully (unaware of collision)</li>
+          <li>Localization error increases (due to slippage)</li>
+        </ul>
+
+        <p><strong>Detection:</strong></p>
+        <pre><code class="bash"># Monitor motor currents (if available)
+ros2 topic echo /motor_status
+# High current indicates collision
+
+# Check localization jump
+ros2 topic echo /amcl_pose
+# Compare pose before/after backup</code></pre>
+
+        <p><strong>Recovery:</strong></p>
+        <pre><code class="yaml"># Fix config
+backup:
+  ros__parameters:
+    enable_collision_checking: true  # Always enable!
+    simulate_ahead_time: 2.0</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Always enable collision checking for recovery behaviors. The performance cost (10-20ms) is negligible compared to collision damage.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build advanced recovery systems:</p>
+
+        <ol>
+          <li>Create mission-specific recovery: "DockingRecovery" with approach re-attempt, "ElevatorRecovery" with door detection</li>
+          <li>Implement probabilistic recovery selection: use ML to choose most-likely-to-succeed recovery based on failure mode</li>
+          <li>Build human-in-the-loop recovery: request teleoperation assistance when autonomous recovery exhausted</li>
+          <li>Add recovery cost estimation: prefer fast recoveries (clear costmap) before slow ones (human help)</li>
+          <li>Create recovery analytics dashboard: track success rates, identify failure patterns</li>
+          <li>Implement recovery learning: robot learns which recoveries work in which locations</li>
+          <li>Build recovery simulator: test recovery sequences offline before deployment</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="bt.html">Behavior Trees</a> - Orchestrating recovery sequences</li>
+          <li><a href="controllers.html">Controllers</a> - Execution that triggers recoveries</li>
+          <li><a href="costmaps.html">Costmaps</a> - Data cleared by recovery behaviors</li>
+          <li><a href="build.html">Build System</a> - Next: Compilation & packaging</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Nav2 recovery docs: <code>navigation.ros.org/behavior_trees/overview/nav2_specific_nodes.html</code></p>
+          <p>Custom recovery tutorial: <code>navigation.ros.org/plugin_tutorials/docs/writing_new_recovery_plugin.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="bt.html" class="prev">Behavior Trees</a>
+        <a href="build.html" class="next">Build System</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SLAM Toolbox - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html" class="active">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#slam">SLAM &amp; Nav2</a> &gt; SLAM Toolbox
+      </nav>
+
+      <h1 class="page-title">SLAM Toolbox</h1>
+      <p class="page-outcome">Build maps in real-time with graph-based SLAM and loop closure.</p>
+
+      <div class="pills">
+        <span class="pill pill-mapping">Mapping</span>
+        <span class="pill pill-localization">Localization</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>SLAM Toolbox is a graph-based SLAM system implementing Karto SLAM algorithm with modern optimizations. It builds 2D occupancy grid maps from laser scans while simultaneously localizing the robot. Uses pose graph optimization with loop closure detection to correct accumulated drift. Supports synchronous (real-time) and asynchronous (post-processing) modes. Provides map serialization, lifelong mapping, and localization-only mode for pre-built maps.</p>
+
+        <h3>Why</h3>
+        <p>Traditional SLAM approaches (GMapping, Hector) struggle with large environments due to drift accumulation. SLAM Toolbox uses graph optimization to maintain global consistency even in multi-kilometer maps. Loop closure automatically detects when robot revisits locations and corrects the entire map trajectory. This enables accurate large-scale mapping without manual intervention. The toolbox integrates seamlessly with Nav2 for autonomous navigation.</p>
+
+        <h3>When</h3>
+        <p>Use SLAM Toolbox for initial map creation in unknown environments. Once map is built, switch to localization mode (with AMCL) for production navigation. SLAM is computationally expensive - consider using asynchronous mode for offline map building from bag files. Requires good odometry and distinctive features in lidar scans. Featureless environments (long hallways, warehouses) may cause tracking failures. Always validate maps manually before deployment.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Launch SLAM Mapping</h3>
+        <p>Start real-time SLAM with default parameters:</p>
+        <pre><code class="bash"># Install SLAM Toolbox
+sudo apt install ros-humble-slam-toolbox
+
+# Launch online synchronous SLAM (real-time)
+ros2 launch slam_toolbox online_sync_launch.py \
+    use_sim_time:=____ \  # true if using Gazebo/bag
+    slam_params_file:=/path/to/mapper_params_online_sync.yaml
+
+# Drive robot around to build map
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.3}, angular: {z: 0.0}}"
+
+# Visualize in RViz
+rviz2 -d `ros2 pkg prefix slam_toolbox`/share/slam_toolbox/rviz/slam_toolbox_default.rviz</code></pre>
+
+        <h3>Configuration File</h3>
+        <p>Create parameter file for SLAM Toolbox:</p>
+        <pre><code class="yaml"># mapper_params_online_sync.yaml
+slam_toolbox:
+  ros__parameters:
+    
+    # Basic Settings
+    odom_frame: ____  # odom
+    map_frame: map
+    base_frame: ____  # base_footprint or base_link
+    scan_topic: /scan
+    use_map_saver: true
+    mode: mapping  # or localization
+    
+    # SLAM Algorithm Parameters
+    resolution: ____  # 0.05 (5cm per pixel)
+    max_laser_range: 20.0  # meters, ignore readings beyond this
+    minimum_travel_distance: ____  # 0.5 (meters before adding scan)
+    minimum_travel_heading: 0.5  # radians before adding scan
+    scan_buffer_size: 10
+    scan_buffer_maximum_scan_distance: 10.0
+    
+    # Loop Closure
+    loop_search_maximum_distance: ____  # 3.0 meters
+    do_loop_closing: true
+    loop_match_minimum_chain_size: 10
+    loop_match_maximum_variance_coarse: 3.0
+    loop_match_minimum_response_coarse: 0.35
+    
+    # Correlation Parameters
+    correlation_search_space_dimension: 0.5
+    correlation_search_space_resolution: 0.01
+    correlation_search_space_smear_deviation: 0.1
+    
+    # Optimization
+    optimize_every_n_nodes: 20
+    link_match_minimum_response_fine: ____  # 0.1
+    link_scan_maximum_distance: 1.5
+    
+    # Performance
+    max_laser_range: 20.0
+    minimum_time_interval: 0.5  # seconds
+    transform_publish_period: ____  # 0.02 (50Hz)
+    
+    # Map Management
+    map_update_interval: 5.0  # seconds</code></pre>
+
+        <h3>Save Map</h3>
+        <p>Serialize map to file:</p>
+        <pre><code class="bash"># Save map while SLAM is running
+ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/path/to/mymap'}}"
+
+# This creates two files:
+# - mymap.yaml (metadata)
+# - mymap.pgm (occupancy grid image)
+
+# OR use map_saver from nav2
+ros2 run nav2_map_server map_saver_cli -f mymap</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (SLAM Modes)</h2>
+
+        <h3>Mapping vs Localization Mode</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Mode</th>
+              <th>Use Case</th>
+              <th>Map Updates</th>
+              <th>CPU Usage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>mapping</code></td>
+              <td>Build new map, explore unknown areas</td>
+              <td>Continuous updates, loop closure</td>
+              <td>High (optimization running)</td>
+            </tr>
+            <tr>
+              <td><code>localization</code></td>
+              <td>Navigate in known map, production use</td>
+              <td>No map changes, only pose estimation</td>
+              <td>Low (no optimization)</td>
+            </tr>
+            <tr>
+              <td><code>lifelong</code></td>
+              <td>Long-term mapping with dynamic changes</td>
+              <td>Incremental map updates over time</td>
+              <td>Medium</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Localization Mode Configuration</h3>
+        <pre><code class="yaml"># localization_params.yaml
+slam_toolbox:
+  ros__parameters:
+    mode: localization  # Changed from mapping
+    
+    # Load pre-built map
+    map_file_name: /path/to/mymap  # .posegraph file
+    map_start_pose: [0.0, 0.0, 0.0]  # x, y, theta
+    
+    # Localization-specific
+    do_loop_closing: false  # Don't modify map
+    minimum_travel_distance: 0.2  # More frequent updates
+    
+    # Still publishes map->odom transform</code></pre>
+
+        <h3>Asynchronous SLAM (Offline Processing)</h3>
+        <pre><code class="bash"># Process bag file offline for high-quality map
+ros2 launch slam_toolbox online_async_launch.py \
+    use_sim_time:=true \
+    slam_params_file:=mapper_params_online_async.yaml
+
+# Play bag (slower than real-time for processing)
+ros2 bag play my_mapping_run.bag --clock --rate 0.5
+
+# Async mode runs optimization in background thread
+# Better for large maps or constrained hardware</code></pre>
+
+        <h3>Launch File Integration</h3>
+        <pre><code class="python">from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+import os
+
+def generate_launch_description():
+    pkg_share = get_package_share_directory('my_robot_slam')
+    
+    slam_params_file = LaunchConfiguration('slam_params_file')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    
+    declare_slam_params_cmd = DeclareLaunchArgument(
+        'slam_params_file',
+        default_value=os.path.join(pkg_share, 'config', 'mapper_params.yaml'),
+        description='Full path to slam parameters file'
+    )
+    
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation clock if true'
+    )
+    
+    slam_node = Node(
+        package='slam_toolbox',
+        executable='____',  # sync_slam_toolbox_node or async_slam_toolbox_node
+        name='slam_toolbox',
+        output='screen',
+        parameters=[
+            slam_params_file,
+            {'use_sim_time': ____}  # use_sim_time
+        ]
+    )
+    
+    return LaunchDescription([
+        declare_slam_params_cmd,
+        declare_use_sim_time_cmd,
+        slam_node
+    ])</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Critical Parameter Tuning</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Effect</th>
+              <th>Increase When</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>minimum_travel_distance</code></td>
+              <td>Distance before adding scan to graph</td>
+              <td>Map too dense, performance issues</td>
+            </tr>
+            <tr>
+              <td><code>loop_search_maximum_distance</code></td>
+              <td>How far to search for loop closures</td>
+              <td>Missing obvious loops in large rooms</td>
+            </tr>
+            <tr>
+              <td><code>resolution</code></td>
+              <td>Map grid cell size</td>
+              <td>Need finer details (small obstacles)</td>
+            </tr>
+            <tr>
+              <td><code>max_laser_range</code></td>
+              <td>Ignore scans beyond this distance</td>
+              <td>Lidar has longer useful range</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Performance Tuning</h3>
+        <pre><code class="yaml"># For resource-constrained platforms (Raspberry Pi, Jetson)
+slam_toolbox:
+  ros__parameters:
+    # Reduce graph density
+    minimum_travel_distance: 1.0  # Larger gaps between nodes
+    minimum_travel_heading: 1.0
+    
+    # Less frequent optimization
+    optimize_every_n_nodes: 50  # Default 20
+    
+    # Limit search space
+    loop_search_maximum_distance: 5.0
+    correlation_search_space_dimension: 0.3
+    
+    # Lower resolution map
+    resolution: 0.1  # 10cm instead of 5cm
+    
+    # Reduce update rate
+    transform_publish_period: 0.05  # 20Hz instead of 50Hz</code></pre>
+
+        <h3>Map File Format</h3>
+        <pre><code class="yaml"># mymap.yaml (generated by map_saver)
+image: mymap.pgm
+resolution: 0.050000
+origin: [-10.0, -10.0, 0.0]  # x, y, theta
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+
+# mymap.pgm is grayscale image:
+# - White (255): Free space
+# - Black (0): Occupied
+# - Gray (127): Unknown</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Verify SLAM node is running
+ros2 node list | grep slam
+# Expected: /slam_toolbox
+
+# Check transforms being published
+ros2 run tf2_ros tf2_echo map odom
+# Expected: Transform values updating as robot moves
+
+# Monitor scan input
+ros2 topic hz /scan
+# Expected: Stable frequency matching lidar (e.g., 10Hz)
+
+# Check map updates
+ros2 topic hz /map
+# Expected: Updates every map_update_interval seconds (default 5s)
+
+# Inspect current pose graph
+ros2 service call /slam_toolbox/serialize_map slam_toolbox/srv/SerializePoseGraph "{filename: {data: '/tmp/debug_map'}}"
+# Creates /tmp/debug_map.posegraph
+
+# Check for loop closures in logs
+ros2 topic echo /slam_toolbox/feedback
+# Look for "Loop closure detected" messages</code></pre>
+
+        <h3>RViz Visualization</h3>
+        <pre><code class="bash"># Launch RViz with SLAM Toolbox config
+rviz2
+
+# Add displays:
+# 1. Map (topic: /map)
+# 2. LaserScan (topic: /scan)
+# 3. RobotModel
+# 4. TF (show map, odom, base_link frames)
+# 5. PoseGraph (topic: /slam_toolbox/graph_visualization)
+
+# Set Fixed Frame to "map"
+
+# Expected visualization:
+# - Map fills in as robot explores
+# - Laser scan aligns with map obstacles
+# - Pose graph shows nodes and loop closure edges (green lines)</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Drive robot in loops to trigger loop closures - revisit starting area after exploring. Watch for sudden map corrections when closure is detected. Good closures improve map quality dramatically.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Map Drift / Poor Odometry</h3>
+        <p><strong>Symptom:</strong> Map becomes inconsistent, walls appear duplicated or misaligned, loop closures fail.</p>
+        <p><strong>Root Cause:</strong> Wheel odometry drifts too much between scans, SLAM can't correlate measurements.</p>
+        <p><strong>Fix:</strong> Improve odometry or tune correlation parameters:</p>
+        <pre><code class="yaml"># Tighten scan correlation
+correlation_search_space_dimension: 0.3  # Reduce from 0.5
+correlation_search_space_resolution: 0.005  # Increase precision
+
+# Add scans more frequently
+minimum_travel_distance: 0.3  # Reduce from 0.5
+minimum_travel_heading: 0.3
+
+# OR improve odometry:
+# - Calibrate wheel diameter and base width
+# - Add IMU fusion with robot_localization
+# - Use visual odometry as supplement</code></pre>
+
+        <h3>Failure 2: False Loop Closures</h3>
+        <p><strong>Symptom:</strong> Map suddenly warps or folds on itself incorrectly.</p>
+        <p><strong>Root Cause:</strong> SLAM incorrectly matches current scan to old location (e.g., similar-looking hallways).</p>
+        <p><strong>Fix:</strong> Increase loop closure thresholds:</p>
+        <pre><code class="yaml"># More conservative loop closure
+loop_match_minimum_response_coarse: 0.5  # Increase from 0.35
+loop_match_minimum_response_fine: 0.45  # Increase from 0.1
+loop_match_minimum_chain_size: 15  # Increase from 10
+
+# Reduce search distance to avoid distant false matches
+loop_search_maximum_distance: 4.0  # Reduce from 8.0
+
+# If problem persists, disable loop closure temporarily:
+do_loop_closing: false</code></pre>
+
+        <h3>Failure 3: Missing map→odom Transform</h3>
+        <p><strong>Symptom:</strong> "Could not transform laser scan into map frame" errors, RViz shows no map.</p>
+        <p><strong>Root Cause:</strong> Frame configuration mismatch or SLAM not initialized.</p>
+        <p><strong>Fix:</strong> Verify frame names and TF tree:</p>
+        <pre><code class="bash"># Check TF tree
+ros2 run tf2_tools view_frames
+# Expected: map -> odom -> base_footprint -> base_link -> laser_frame
+
+# Verify SLAM parameters match robot frames
+ros2 param get /slam_toolbox odom_frame
+# Should match odometry publisher frame_id
+
+ros2 param get /slam_toolbox base_frame
+# Should match robot base frame
+
+# Check scan message header
+ros2 topic echo /scan --once | grep frame_id
+# Should match laser frame in URDF/TF tree
+
+# If frames don't match, update config:
+# mapper_params.yaml
+odom_frame: odom  # Match your odom publisher
+base_frame: base_footprint  # Match your robot base
+# Then restart SLAM node</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Corrupt Odometry and Observe</h3>
+        <p>Intentionally publish bad odometry to see SLAM failure modes:</p>
+
+        <pre><code class="python"># bad_odom.py - Publishes odometry with 50% error
+import rclpy
+from rclpy.node import Node
+from nav_msgs.msg import Odometry
+import math
+
+class BadOdomPublisher(Node):
+    def __init__(self):
+        super().__init__('bad_odom_publisher')
+        
+        # Subscribe to real odometry
+        self.sub = self.create_subscription(
+            Odometry, '/odom_raw', self.odom_callback, 10)
+        
+        # Publish corrupted odometry
+        self.pub = self.create_publisher(Odometry, '/odom', 10)
+        
+    def odom_callback(self, msg):
+        # Scale linear velocity by 1.5x (simulate wheel slip)
+        msg.twist.twist.linear.x *= ____  # 1.5
+        
+        # Add noise to angular velocity
+        msg.twist.twist.angular.z += ____  # 0.1 radians/sec
+        
+        self.pub.publish(msg)
+
+# Run this node and observe in RViz:
+# - Map drift increases
+# - Walls appear doubled
+# - Loop closures may fail or be false</code></pre>
+
+        <p><strong>Detection:</strong> Monitor loop closure success rate:</p>
+        <pre><code class="bash">ros2 topic echo /slam_toolbox/feedback
+# Look for "Loop closure failed" vs "Loop closure detected"
+# High failure rate indicates odometry or feature issues</code></pre>
+
+        <p><strong>Recovery:</strong> Tune SLAM to tolerate more odometry error:</p>
+        <pre><code class="yaml">minimum_travel_distance: 0.2  # Add scans more frequently
+correlation_search_space_dimension: 0.7  # Wider search window
+correlation_search_space_smear_deviation: 0.2  # More tolerance</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>SLAM Toolbox requires distinctive environment features. Featureless areas (empty rooms, long hallways) cause tracking loss. Add temporary landmarks during mapping if needed.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a complete mapping pipeline:</p>
+
+        <ol>
+          <li>Create launch file that starts robot, SLAM, and RViz together</li>
+          <li>Implement autonomous exploration node (frontier-based or random walk)</li>
+          <li>Add automated map quality check (detect holes, disconnected regions)</li>
+          <li>Build map merging tool for multi-robot SLAM</li>
+          <li>Create lifelong mapping setup with periodic map serialization</li>
+          <li>Implement map difference detection for dynamic environment monitoring</li>
+          <li>Add custom RViz panel for SLAM control (save map, reset, switch modes)</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="amcl.html">AMCL Localization</a> - Use built map for localization</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - Navigate using SLAM-generated map</li>
+          <li><a href="tf.html">TF Transforms</a> - Understanding frame relationships</li>
+          <li><a href="bag.html">Bag Recording</a> - Record mapping runs for offline processing</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>GitHub repo: <code>github.com/SteveMacenski/slam_toolbox</code></p>
+          <p>ROS2 docs: <code>navigation.ros.org</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="bag.html" class="prev">Bag Recording</a>
+        <a href="amcl.html" class="next">AMCL Localization</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

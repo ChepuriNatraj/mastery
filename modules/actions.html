@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Actions - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html" class="active">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#core">Core ROS2</a> &gt; Actions
+      </nav>
+
+      <h1 class="page-title">Actions</h1>
+      <p class="page-outcome">Long-running tasks with feedback and cancellation support.</p>
+
+      <div class="pills">
+        <span class="pill pill-cpu">CPU-Light</span>
+        <span class="pill pill-required">Required</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Actions combine pub/sub and services for preemptable, long-running tasks. They provide goal submission, continuous feedback, and result delivery. Clients can cancel goals mid-execution. Actions use three topics internally: goal, feedback, and result. Nav2's navigate-to-pose is the canonical action example.</p>
+
+        <h3>Why</h3>
+        <p>Services block until completion, unsuitable for tasks taking seconds or minutes. Topics provide no acknowledgment or completion status. Actions solve this by allowing non-blocking goal submission with progress updates and guaranteed result delivery. They're essential for navigation, manipulation, and any interruptible task.</p>
+
+        <h3>When</h3>
+        <p>Use actions for any operation over 1 second where clients need progress feedback or cancellation ability. Navigation goals, arm movements, and autonomous tasks fit perfectly. Avoid actions for instant operations (use services) or continuous streams (use topics). Actions add overhead, so reserve them for truly long-running work.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>C++ Micro-Task</h3>
+        <p>Create a Fibonacci action server:</p>
+        <pre><code class="c++">#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
+#include "example_interfaces/action/fibonacci.hpp"
+
+using Fibonacci = example_interfaces::action::Fibonacci;
+using GoalHandle = rclcpp_action::ServerGoalHandle&lt;Fibonacci&gt;;
+
+class FibonacciServer : public rclcpp::Node {
+public:
+  FibonacciServer() : Node("fibonacci_server") {
+    action_server_ = rclcpp_action::create_server&lt;Fibonacci&gt;(
+      this, "____",
+      std::bind(&amp;FibonacciServer::handle_goal, this, _1, _2),
+      std::bind(&amp;FibonacciServer::handle_cancel, this, _1),
+      std::bind(&amp;FibonacciServer::handle_accepted, this, _1));
+  }
+
+private:
+  rclcpp_action::GoalResponse handle_goal(
+    const rclcpp_action::GoalUUID&amp; uuid,
+    std::shared_ptr&lt;const Fibonacci::Goal&gt; goal) {
+    RCLCPP_INFO(this-&gt;get_logger(), "Received goal order %d", goal-&gt;order);
+    return rclcpp_action::GoalResponse::____; // ACCEPT_AND_EXECUTE
+  }
+
+  rclcpp_action::CancelResponse handle_cancel(
+    const std::shared_ptr&lt;GoalHandle&gt; goal_handle) {
+    RCLCPP_INFO(this-&gt;get_logger(), "Cancel request");
+    return rclcpp_action::CancelResponse::____; // ACCEPT
+  }
+
+  void handle_accepted(const std::shared_ptr&lt;GoalHandle&gt; goal_handle) {
+    std::thread{std::bind(&amp;FibonacciServer::execute, this, _1), goal_handle}.detach();
+  }
+
+  void execute(const std::shared_ptr&lt;GoalHandle&gt; goal_handle) {
+    auto result = std::make_shared&lt;Fibonacci::Result&gt;();
+    auto feedback = std::make_shared&lt;Fibonacci::Feedback&gt;();
+    auto&amp; sequence = feedback-&gt;sequence;
+    sequence.push_back(0);
+    sequence.push_back(1);
+
+    for (int i = 1; i &lt; goal_handle-&gt;get_goal()-&gt;order; ++i) {
+      if (goal_handle-&gt;is_canceling()) {
+        goal_handle-&gt;canceled(result);
+        return;
+      }
+      sequence.push_back(sequence[i] + sequence[i - 1]);
+      goal_handle-&gt;publish_feedback(____);
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+    result-&gt;sequence = sequence;
+    goal_handle-&gt;succeed(result);
+  }
+
+  rclcpp_action::Server&lt;Fibonacci&gt;::SharedPtr action_server_;
+};
+
+int main(int argc, char **argv) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared&lt;FibonacciServer&gt;());
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+
+        <h3>Python Micro-Task</h3>
+        <p>Create matching client:</p>
+        <pre><code class="python">import rclpy
+from rclpy.action import ActionClient
+from rclpy.node import Node
+from example_interfaces.action import Fibonacci
+
+class FibonacciClient(Node):
+    def __init__(self):
+        super().__init__('fibonacci_client')
+        self.action_client = ActionClient(self, Fibonacci, '____')
+
+    def send_goal(self, order):
+        goal_msg = Fibonacci.Goal()
+        goal_msg.order = ____
+        
+        self.action_client.wait_for_server()
+        self.send_goal_future = self.action_client.send_goal_async(
+            goal_msg, feedback_callback=self.feedback_callback)
+        self.send_goal_future.add_done_callback(self.goal_response_callback)
+
+    def feedback_callback(self, feedback_msg):
+        feedback = feedback_msg.feedback
+        self.get_logger().info('Feedback: %s' % feedback.____)
+
+    def goal_response_callback(self, future):
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info('Goal rejected')
+            return
+        self.get_logger().info('Goal accepted')
+        self.result_future = goal_handle.get_result_async()
+        self.result_future.add_done_callback(self.result_callback)
+
+    def result_callback(self, future):
+        result = future.result().result
+        self.get_logger().info('Result: %s' % result.sequence)
+
+def main(args=None):
+    rclpy.init(args=args)
+    client = FibonacciClient()
+    client.send_goal(10)
+    rclpy.spin(client)
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Python vs C++)</h2>
+
+        <h3>Action Server</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto server = rclcpp_action::create_server&lt;ActionType&gt;(
+  node, "action_name",
+  handle_goal, handle_cancel, handle_accepted);</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">self.server = ActionServer(
+    self, ActionType, 'action_name',
+    execute_callback=self.execute_cb)</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Sending Goals</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto goal = ActionType::Goal();
+auto future = client-&gt;async_send_goal(goal, options);</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">goal = ActionType.Goal()
+future = client.send_goal_async(goal)</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Publishing Feedback</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto feedback = std::make_shared&lt;ActionType::Feedback&gt;();
+feedback-&gt;progress = 0.5;
+goal_handle-&gt;publish_feedback(feedback);</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">feedback_msg = ActionType.Feedback()
+feedback_msg.progress = 0.5
+goal_handle.publish_feedback(feedback_msg)</code></pre>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Action Timeout Settings</h3>
+        <pre><code class="yaml">action_client:
+  ros__parameters:
+    server_timeout_sec: 5.0      # Wait for server availability
+    goal_response_timeout_sec: 2.0   # Wait for goal acceptance
+    result_timeout_sec: 60.0     # Maximum execution time</code></pre>
+
+        <h3>Multi-Goal Server Config</h3>
+        <pre><code class="yaml">action_server:
+  ros__parameters:
+    max_concurrent_goals: 1      # Queue or reject additional goals
+    goal_queue_size: 5           # Buffer pending goals
+    cancel_all_on_shutdown: true # Clean exit behavior</code></pre>
+
+        <h3>Launch with Action Remapping</h3>
+        <pre><code class="python">Node(
+    package='my_pkg',
+    executable='action_server',
+    remappings=[
+        ('fibonacci', 'math/fibonacci')
+    ]
+)</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Terminal 1: Run server
+ros2 run my_pkg fibonacci_server
+
+# Terminal 2: List actions
+ros2 action list
+# Expected: /fibonacci
+
+# Show action type
+ros2 action info /fibonacci
+# Expected: Action: example_interfaces/action/Fibonacci
+
+# Send goal from CLI
+ros2 action send_goal /fibonacci example_interfaces/action/Fibonacci "{order: 5}" --feedback
+# Expected: Feedback with sequence [0, 1, 1, 2, 3, 5], then final result
+
+# Cancel running goal (Ctrl+C while goal executing)
+ros2 action send_goal /fibonacci example_interfaces/action/Fibonacci "{order: 100}" &amp;
+# Then press Ctrl+C to cancel</code></pre>
+
+        <h3>Monitor Action Topics</h3>
+        <pre><code class="bash"># Actions use 3 hidden topics
+ros2 topic list
+# Expected: /fibonacci/_action/feedback, /fibonacci/_action/status, ...
+
+ros2 topic echo /fibonacci/_action/feedback
+# Shows real-time feedback during execution</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use <code>ros2 interface show example_interfaces/action/Fibonacci</code> to see goal, feedback, and result structure.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Goal Rejected Immediately</h3>
+        <p><strong>Symptom:</strong> Server rejects goal without executing, client receives rejection.</p>
+        <p><strong>Root Cause:</strong> Server's <code>handle_goal</code> returns REJECT due to validation failure or busy state.</p>
+        <p><strong>Fix:</strong> Check goal validation logic and server capacity:</p>
+        <pre><code class="c++">rclcpp_action::GoalResponse handle_goal(...) {
+  if (goal-&gt;order &lt; 1 || goal-&gt;order &gt; 100) {
+    RCLCPP_WARN(this-&gt;get_logger(), "Invalid order: %d", goal-&gt;order);
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+  if (current_goals_ &gt;= max_goals_) {
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+}</code></pre>
+
+        <h3>Failure 2: Feedback Never Received</h3>
+        <p><strong>Symptom:</strong> Goal executes but client's feedback callback never fires.</p>
+        <p><strong>Root Cause:</strong> Client didn't register feedback callback or server doesn't publish feedback.</p>
+        <p><strong>Fix:</strong> Ensure both sides configured correctly:</p>
+        <pre><code class="python"># Client must specify feedback callback
+future = self.action_client.send_goal_async(
+    goal_msg,
+    feedback_callback=self.feedback_callback)  # Don't forget this!
+
+# Server must publish feedback
+goal_handle.publish_feedback(feedback_msg)  # Inside execute loop</code></pre>
+
+        <h3>Failure 3: Cancel Request Ignored</h3>
+        <p><strong>Symptom:</strong> Client cancels goal but server continues executing.</p>
+        <p><strong>Root Cause:</strong> Server's execute loop doesn't check <code>is_canceling()</code> status.</p>
+        <p><strong>Fix:</strong> Poll cancellation state in tight loops:</p>
+        <pre><code class="c++">void execute(const std::shared_ptr&lt;GoalHandle&gt; goal_handle) {
+  while (work_remaining) {
+    if (goal_handle-&gt;is_canceling()) {
+      RCLCPP_INFO(this-&gt;get_logger(), "Goal canceled");
+      goal_handle-&gt;canceled(result);
+      return;  // Exit immediately
+    }
+    // Do work...
+  }
+  goal_handle-&gt;succeed(result);
+}</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Timeout and Retry</h3>
+        <p>Create a server that randomly fails goals:</p>
+
+        <pre><code class="python">import random
+
+def execute_callback(self, goal_handle):
+    if random.random() &lt; 0.3:  # 30% failure rate
+        self.get_logger().error('Simulated failure')
+        goal_handle.abort()
+        return ActionType.Result()
+    
+    # Normal execution...
+    goal_handle.succeed()
+    return result</code></pre>
+
+        <p><strong>Detection:</strong> Client checks result status:</p>
+        <pre><code class="python">def result_callback(self, future):
+    status = future.result().status
+    if status == GoalStatus.STATUS_ABORTED:
+        self.get_logger().warn('Goal aborted, retrying...')
+        self.retry_count += 1
+        if self.retry_count &lt; 3:
+            self.send_goal(self.last_goal)
+    elif status == GoalStatus.STATUS_SUCCEEDED:
+        self.get_logger().info('Success!')
+        result = future.result().result</code></pre>
+
+        <p><strong>Recovery:</strong> Implement exponential backoff for retries.</p>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Always set timeouts on action clients. Network issues or server crashes can leave clients waiting indefinitely.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a patrol action for robot navigation:</p>
+
+        <ol>
+          <li>Define <code>action/Patrol.action</code>:
+            <pre><code># Goal
+geometry_msgs/PoseStamped[] waypoints
+---
+# Result
+int32 waypoints_visited
+bool completed
+---
+# Feedback
+int32 current_waypoint
+geometry_msgs/PoseStamped current_pose
+float32 percent_complete</code></pre>
+          </li>
+          <li>Server navigates waypoints sequentially, publishes feedback after each</li>
+          <li>Handle cancellation mid-patrol</li>
+          <li>Client displays progress bar based on percent_complete</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="services.html">Services</a> - For quick operations without feedback</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - Real-world action usage with navigate-to-pose</li>
+          <li><a href="bt.html">Behavior Trees</a> - Compose action calls into complex behaviors</li>
+          <li><a href="recovery.html">Recovery Behaviors</a> - Handle action failures gracefully</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official docs: <code>docs.ros.org/en/humble/Tutorials/Intermediate/Writing-an-Action-Server-Client/Cpp.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="services.html" class="prev">Services</a>
+        <a href="params.html" class="next">Parameters</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

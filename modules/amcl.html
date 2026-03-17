@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMCL Localization - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html" class="active">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#slam">SLAM &amp; Nav2</a> &gt; AMCL Localization
+      </nav>
+
+      <h1 class="page-title">AMCL Localization</h1>
+      <p class="page-outcome">Track robot pose in known maps with particle filters.</p>
+
+      <div class="pills">
+        <span class="pill pill-localization">Localization</span>
+        <span class="pill pill-nav2">Nav2</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>AMCL (Adaptive Monte Carlo Localization) estimates robot pose in a known map using laser scans and odometry. It implements a particle filter - maintains a set of weighted hypotheses (particles) representing possible robot poses. Each particle is updated based on odometry motion model and weighted by scan-to-map correlation. Particles converge to most likely pose over time. Adapts particle count dynamically based on localization confidence (KLD-sampling). Publishes map→odom transform to maintain global consistency.</p>
+
+        <h3>Why</h3>
+        <p>Odometry-only navigation accumulates unbounded error - robot drifts from true position. AMCL corrects this drift by matching sensor observations to map. Unlike EKF localization, particle filters can track multiple hypotheses (useful for ambiguous symmetric environments) and recover from kidnapped robot problem. AMCL is computationally efficient, handles non-Gaussian noise, and integrates seamlessly with Nav2 stack for autonomous navigation.</p>
+
+        <h3>When</h3>
+        <p>Use AMCL for production navigation in static, pre-mapped environments. Requires accurate 2D map and working odometry. Not suitable for dynamic environments (many moving obstacles), outdoor navigation without clear features, or 3D localization. AMCL needs initial pose estimate - either manual (RViz 2D Pose Estimate) or from known starting position. Kidnapped robot recovery takes time and may fail in featureless areas. Always validate localization quality before autonomous operation.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Launch AMCL</h3>
+        <p>Start localization with existing map:</p>
+        <pre><code class="bash"># Install Nav2 (includes AMCL)
+sudo apt install ros-humble-navigation2 ros-humble-nav2-bringup
+
+# Launch map server with pre-built map
+ros2 run nav2_map_server map_server --ros-args \
+    -p yaml_filename:=/path/to/mymap.yaml \
+    -p use_sim_time:=____  # true if simulation
+
+# Lifecycle: Configure and activate map server
+ros2 lifecycle set /map_server configure
+ros2 lifecycle set /map_server ____  # activate
+
+# Launch AMCL
+ros2 run nav2_amcl amcl --ros-args \
+    --params-file /path/to/amcl_config.yaml \
+    -p use_sim_time:=true
+
+# Lifecycle: Configure and activate AMCL
+ros2 lifecycle set /amcl configure
+ros2 lifecycle set /amcl activate</code></pre>
+
+        <h3>Configuration File</h3>
+        <p>Create parameter file for AMCL:</p>
+        <pre><code class="yaml"># amcl_config.yaml
+amcl:
+  ros__parameters:
+    
+    # Frame IDs
+    global_frame_id: ____  # map
+    odom_frame_id: odom
+    base_frame_id: base_footprint
+    scan_topic: /scan
+    
+    # Particle Filter Settings
+    min_particles: 500
+    max_particles: ____  # 2000
+    
+    # Thresholds for resampling
+    update_min_d: 0.2  # meters - minimum translation before update
+    update_min_a: ____  # 0.5 radians - minimum rotation before update
+    resample_interval: 1  # Resample every N updates
+    
+    # Transform tolerance
+    transform_tolerance: ____  # 0.1 seconds
+    
+    # Initial pose (if known)
+    set_initial_pose: true
+    initial_pose:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      yaw: ____  # 0.0
+    
+    # Motion Model (odom)
+    robot_model_type: "____"  # nav2_amcl::DifferentialMotionModel
+    
+    # Odometry noise parameters (alpha1-4)
+    alpha1: 0.2  # Rotation noise from rotation
+    alpha2: 0.2  # Rotation noise from translation
+    alpha3: ____  # Translation noise from translation
+    alpha4: 0.2  # Translation noise from rotation
+    alpha5: 0.2  # Translation noise from strafe (omni only)
+    
+    # Laser Model
+    laser_model_type: "likelihood_field"  # or beam
+    laser_likelihood_max_dist: 2.0
+    laser_max_range: 100.0
+    laser_min_range: ____  # -1.0 (use scan min)
+    
+    # Beam skip parameters
+    do_beamskip: false
+    beam_skip_distance: 0.5
+    beam_skip_threshold: 0.3
+    
+    # Likelihood field
+    z_hit: ____  # 0.5
+    z_rand: 0.5
+    z_max: 0.05
+    z_short: 0.05
+    sigma_hit: 0.2
+    
+    # Recovery behaviors
+    recovery_alpha_slow: 0.0  # Exponential decay rate for slow average
+    recovery_alpha_fast: ____  # 0.0 for fast average
+    
+    # Performance
+    max_beams: 60  # Subsample laser scan
+    pf_err: 0.05  # Particle filter error
+    pf_z: 0.99  # Confidence
+    
+    # Always on
+    always_reset_initial_pose: false
+    first_map_only: false</code></pre>
+
+        <h3>Set Initial Pose in RViz</h3>
+        <p>Initialize particle cloud manually:</p>
+        <pre><code class="bash"># Launch RViz
+rviz2
+
+# In RViz:
+# 1. Add Map display (topic: /map)
+# 2. Add PoseArray display (topic: /particle_cloud)
+# 3. Add RobotModel
+# 4. Set Fixed Frame to "map"
+# 5. Click "2D Pose Estimate" button
+# 6. Click and drag on map to set initial pose (position + orientation)
+
+# Or set programmatically:
+ros2 topic pub --once /initialpose geometry_msgs/msg/PoseWithCovarianceStamped \
+"{
+  header: {frame_id: 'map'},
+  pose: {
+    pose: {position: {x: 0.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}},
+    covariance: [0.25, 0.0, 0.0, 0.0, 0.0, 0.0,
+                 0.0, 0.25, 0.0, 0.0, 0.0, 0.0,
+                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                 0.0, 0.0, 0.0, 0.0, 0.0, 0.06854]
+  }
+}"</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Particle Filter)</h2>
+
+        <h3>Particle Filter Algorithm</h3>
+        <pre><code class="python"># Conceptual AMCL particle filter (simplified)
+class ParticleFilter:
+    def __init__(self, num_particles):
+        # Initialize particles with random poses
+        self.particles = [Particle(x, y, theta) for _ in range(num_particles)]
+        
+    def motion_update(self, odom_delta):
+        """Predict: Move particles based on odometry"""
+        for p in self.particles:
+            # Apply motion model with noise
+            p.x += odom_delta.x + gaussian_noise(alpha3)
+            p.y += odom_delta.y + gaussian_noise(alpha3)
+            p.theta += odom_delta.theta + gaussian_noise(____)  # alpha1
+    
+    def sensor_update(self, laser_scan, map_):
+        """Update: Weight particles by scan-map match"""
+        for p in self.particles:
+            # Project laser scan from particle pose
+            expected_scan = ray_trace(p.pose, map_)
+            
+            # Compare to actual scan (likelihood field)
+            p.weight = compute_likelihood(laser_scan, expected_scan)
+        
+        # Normalize weights
+        total_weight = sum(p.weight for p in self.particles)
+        for p in self.particles:
+            p.weight /= ____  # total_weight
+    
+    def resample(self):
+        """Resample particles proportional to weights"""
+        new_particles = []
+        for _ in range(len(self.particles)):
+            # Low variance resampling
+            selected = weighted_random_choice(self.particles)
+            new_particles.append(copy(selected))
+        
+        self.particles = new_particles
+    
+    def estimate_pose(self):
+        """Return weighted average of particles"""
+        x = sum(p.x * p.weight for p in self.particles)
+        y = sum(p.y * p.weight for p in self.particles)
+        theta = circular_mean([p.theta for p in self.particles], 
+                              [p.weight for p in self.particles])
+        return Pose(x, y, theta)</code></pre>
+
+        <h3>Motion Model Types</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Robot Type</th>
+              <th>DOF</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>DifferentialMotionModel</code></td>
+              <td>Differential drive (TurtleBot, etc.)</td>
+              <td>2D (x, y, θ)</td>
+            </tr>
+            <tr>
+              <td><code>OmniMotionModel</code></td>
+              <td>Omnidirectional (mecanum wheels)</td>
+              <td>2D with strafe</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Laser Model Types</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Computation</th>
+              <th>Accuracy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>likelihood_field</code></td>
+              <td>Fast (pre-computed distance field)</td>
+              <td>Good for most cases</td>
+            </tr>
+            <tr>
+              <td><code>beam</code></td>
+              <td>Slow (ray tracing per particle)</td>
+              <td>Higher accuracy, handles dynamics</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>C++ Custom Initialization</h3>
+        <pre><code class="cpp">#include &lt;rclcpp/rclcpp.hpp&gt;
+#include &lt;geometry_msgs/msg/pose_with_covariance_stamped.hpp&gt;
+
+class InitialPosePublisher : public rclcpp::Node {
+public:
+    InitialPosePublisher() : Node("initial_pose_pub") {
+        publisher_ = this->create_publisher&lt;
+            geometry_msgs::msg::PoseWithCovarianceStamped&gt;(
+            "/initialpose", 10);
+        
+        // Set known starting pose
+        auto msg = geometry_msgs::msg::PoseWithCovarianceStamped();
+        msg.header.frame_id = "map";
+        msg.header.stamp = this->now();
+        
+        // Position
+        msg.pose.pose.position.x = 0.0;
+        msg.pose.pose.position.y = 0.0;
+        msg.pose.pose.orientation.w = 1.0;  // No rotation
+        
+        // Covariance (uncertainty)
+        msg.pose.covariance[0] = 0.25;  // x variance
+        msg.pose.covariance[7] = 0.25;  // y variance
+        msg.pose.covariance[35] = 0.068;  // theta variance
+        
+        publisher_->publish(msg);
+        RCLCPP_INFO(this->get_logger(), "Initial pose set");
+    }
+
+private:
+    rclcpp::Publisher&lt;geometry_msgs::msg::PoseWithCovarianceStamped&gt;::SharedPtr publisher_;
+};</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Alpha Parameters (Motion Noise)</h3>
+        <p>Tune based on odometry quality:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Meaning</th>
+              <th>Increase When</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>alpha1</code></td>
+              <td>Rotation error from rotation</td>
+              <td>Robot spins inaccurately</td>
+            </tr>
+            <tr>
+              <td><code>alpha2</code></td>
+              <td>Rotation error from translation</td>
+              <td>Robot veers while driving straight</td>
+            </tr>
+            <tr>
+              <td><code>alpha3</code></td>
+              <td>Translation error from translation</td>
+              <td>Wheel slip, rough terrain</td>
+            </tr>
+            <tr>
+              <td><code>alpha4</code></td>
+              <td>Translation error from rotation</td>
+              <td>Robot drifts during turns</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Particle Count Tuning</h3>
+        <pre><code class="yaml"># Few particles (500-1000): Fast but less robust
+min_particles: 500
+max_particles: 1000
+# Use for: Simple environments, good odometry, high CPU load
+
+# Many particles (2000-5000): Slow but robust
+min_particles: 2000
+max_particles: 5000
+# Use for: Symmetric environments, poor odometry, kidnapped robot</code></pre>
+
+        <h3>Update Frequency</h3>
+        <pre><code class="yaml"># High update rate (small thresholds)
+update_min_d: 0.1  # Update every 10cm
+update_min_a: 0.2  # Update every ~11 degrees
+# Pros: Accurate tracking, quick convergence
+# Cons: High CPU usage
+
+# Low update rate (large thresholds)
+update_min_d: 0.5  # Update every 50cm
+update_min_a: 1.0  # Update every ~57 degrees
+# Pros: Low CPU usage
+# Cons: Slower convergence, may lose track in fast motion</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Verify AMCL node running
+ros2 node list | grep amcl
+# Expected: /amcl
+
+# Check transform chain
+ros2 run tf2_ros tf2_echo map base_link
+# Expected: Stable transform, updating as robot moves
+
+# Monitor particle cloud
+ros2 topic hz /particle_cloud
+# Expected: Updates at AMCL update rate (~1-10Hz depending on motion)
+
+# Check pose estimate
+ros2 topic echo /amcl_pose
+# Expected: PoseWithCovarianceStamped messages
+# Covariance should be small (< 0.1) when localized
+
+# Inspect AMCL diagnostics
+ros2 topic echo /diagnostics
+# Look for /amcl/status - should report "OK" when localized
+
+# Test localization quality by driving robot
+# Particle cloud should remain tight (converged)</code></pre>
+
+        <h3>RViz Verification</h3>
+        <pre><code class="bash"># Launch RViz with AMCL visualization
+rviz2
+
+# Add displays:
+# 1. Map (topic: /map)
+# 2. PoseArray (topic: /particle_cloud) - shows particle distribution
+# 3. PoseWithCovariance (topic: /amcl_pose) - shows estimated pose with uncertainty
+# 4. LaserScan (topic: /scan)
+# 5. RobotModel
+# 6. TF
+
+# Good localization indicators:
+# - Particle cloud is tight (small spread)
+# - Laser scan aligns with map obstacles
+# - Pose covariance ellipse is small
+# - Particles don't diverge during motion
+
+# Bad localization indicators:
+# - Particle cloud is wide/scattered
+# - Multiple distinct particle clusters (ambiguous pose)
+# - Laser scan misaligned with map
+# - Pose jumps erratically</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Monitor particle cloud convergence. On startup, particles spread across entire free space. As robot moves and receives scan updates, particles should converge to single cluster within 10-30 seconds.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Particles Diverge / No Convergence</h3>
+        <p><strong>Symptom:</strong> Particle cloud remains scattered, pose estimate jumps around, robot can't localize.</p>
+        <p><strong>Root Cause:</strong> Poor odometry, insufficient distinctive features, or incorrect initial pose.</p>
+        <p><strong>Fix:</strong> Increase particle count and motion noise:</p>
+        <pre><code class="yaml"># Allow more hypotheses
+max_particles: 5000
+
+# Increase motion noise to spread particles more
+alpha1: 0.4  # Was 0.2
+alpha2: 0.4
+alpha3: 0.4
+alpha4: 0.4
+
+# Use more laser beams for better matching
+max_beams: 180  # Was 60
+
+# Set better initial pose (closer to truth)
+# Use RViz 2D Pose Estimate tool interactively</code></pre>
+
+        <h3>Failure 2: Global Localization Failure</h3>
+        <p><strong>Symptom:</strong> Without good initial pose, AMCL never localizes (kidnapped robot problem).</p>
+        <p><strong>Root Cause:</strong> Particle filter needs approximate starting pose, can't search entire map efficiently.</p>
+        <p><strong>Fix:</strong> Use global localization service or increase initial spread:</p>
+        <pre><code class="bash"># Request global localization (spreads particles everywhere)
+ros2 service call /reinitialize_global_localization std_srvs/srv/Empty
+
+# Or increase initial covariance in config
+initial_pose:
+  x: 0.0
+  y: 0.0
+  yaw: 0.0
+  # Large covariance = wide particle spread
+  covariance_x: ____  # 25.0 (spread over ±10m)
+  covariance_y: 25.0
+  covariance_yaw: 0.68  # ±60 degrees
+
+# Drive robot around distinctive features to help convergence</code></pre>
+
+        <h3>Failure 3: TF Timeout / Extrapolation Errors</h3>
+        <p><strong>Symptom:</strong> "Transform timeout" or "extrapolation into future" errors, navigation fails.</p>
+        <p><strong>Root Cause:</strong> AMCL not publishing map→odom transform fast enough or timing issues.</p>
+        <p><strong>Fix:</strong> Increase transform tolerance and check timing:</p>
+        <pre><code class="yaml"># Increase tolerance for delayed transforms
+transform_tolerance: 0.5  # Was 0.1 seconds
+
+# Reduce update thresholds for more frequent publishing
+update_min_d: 0.1
+update_min_a: 0.1
+
+# Check for timing issues
+# Terminal 1:
+ros2 topic hz /scan  # Should be stable (e.g., 10Hz)
+
+# Terminal 2:
+ros2 run tf2_ros tf2_monitor
+# Look for high latency on map->odom or odom->base_link
+
+# If odometry is delayed, fix odom publisher, not AMCL</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Kidnapped Robot Detection</h3>
+        <p>Teleport robot and observe AMCL recovery:</p>
+
+        <pre><code class="bash"># Terminal 1: Launch AMCL and RViz with map
+ros2 launch nav2_bringup localization_launch.py map:=mymap.yaml
+
+# Terminal 2: Wait for convergence, then teleport robot
+# In Gazebo: Use GUI to move robot to different location
+# OR publish false transform
+ros2 run tf2_ros static_transform_publisher 5 5 0 0 0 0 map odom_kidnapped
+
+# Observe in RViz:
+# - Particle cloud suddenly diverges
+# - Laser scan misaligns with map
+# - Pose estimate becomes uncertain (large covariance)</code></pre>
+
+        <p><strong>Detection:</strong> Monitor pose covariance:</p>
+        <pre><code class="python"># pose_monitor.py
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import PoseWithCovarianceStamped
+import math
+
+class PoseMonitor(Node):
+    def __init__(self):
+        super().__init__('pose_monitor')
+        self.subscription = self.create_subscription(
+            PoseWithCovarianceStamped,
+            '/amcl_pose',
+            self.pose_callback,
+            10)
+    
+    def pose_callback(self, msg):
+        # Extract position covariance
+        cov_x = msg.pose.covariance[0]
+        cov_y = msg.pose.covariance[7]
+        
+        uncertainty = math.sqrt(cov_x + cov_y)
+        
+        if uncertainty > ____:  # 1.0 meter
+            self.get_logger().warn(f"High uncertainty: {uncertainty:.2f}m - possible kidnapping!")
+        else:
+            self.get_logger().info(f"Localized: {uncertainty:.2f}m")</code></pre>
+
+        <p><strong>Recovery:</strong> Drive to distinctive area:</p>
+        <pre><code class="bash"># AMCL will eventually converge if robot moves through
+# areas with unique features (corners, doorways)
+# May take 30-60 seconds depending on environment
+
+# Or manually re-initialize if recovery fails:
+ros2 topic pub --once /initialpose geometry_msgs/msg/PoseWithCovarianceStamped \
+  "{header: {frame_id: 'map'}, pose: {pose: {position: {x: 5.0, y: 5.0}, orientation: {w: 1.0}}}}"</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>AMCL assumes static environment. Moving obstacles (people, other robots) can cause false localization if they occupy significant map area. Use obstacle filtering or dynamic map updates for highly dynamic environments.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a robust localization system:</p>
+
+        <ol>
+          <li>Implement automatic initial pose detection from fiducial markers</li>
+          <li>Create localization quality monitor that triggers re-initialization</li>
+          <li>Build multi-hypothesis tracker for symmetric environments</li>
+          <li>Add sensor fusion with IMU using robot_localization package</li>
+          <li>Implement automatic global localization on startup (no manual init)</li>
+          <li>Create diagnostic node that validates map-scan alignment continuously</li>
+          <li>Add fallback localization using visual landmarks when AMCL fails</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="slam.html">SLAM Toolbox</a> - Build maps for AMCL to use</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - Use AMCL for autonomous navigation</li>
+          <li><a href="tf.html">TF Transforms</a> - Understanding map→odom→base_link chain</li>
+          <li><a href="diagnostics.html">Diagnostics</a> - Monitor AMCL health</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official Nav2 AMCL docs: <code>navigation.ros.org/configuration/packages/configuring-amcl.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="slam.html" class="prev">SLAM Toolbox</a>
+        <a href="nav2.html" class="next">Nav2 Stack</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

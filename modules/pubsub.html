@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Publish/Subscribe - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html" class="active">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#core">Core ROS2</a> &gt; Publish/Subscribe
+      </nav>
+
+      <h1 class="page-title">Publish/Subscribe</h1>
+      <p class="page-outcome">Send and receive messages reliably with matching QoS policies.</p>
+
+      <div class="pills">
+        <span class="pill pill-cpu">CPU-Light</span>
+        <span class="pill pill-required">Required</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>The publish/subscribe pattern decouples data producers from consumers via named topics. Publishers send messages without knowing who receives them; subscribers receive all messages on topics they join. This is ROS2's primary communication mechanism for sensor data, commands, and state updates.</p>
+
+        <h3>Why</h3>
+        <p>Pub/sub enables flexible system composition where nodes can be added or removed without modifying existing code. It scales to many-to-many connections and supports different QoS profiles for reliability vs. latency trade-offs. This pattern is essential for streaming data like laser scans, camera images, and odometry.</p>
+
+        <h3>When</h3>
+        <p>Use pub/sub for continuous data streams, sensor readings, and state broadcasts. Avoid it for request/response patterns (use services instead) or long-running tasks requiring feedback (use actions). If message order or delivery guarantees matter, configure appropriate QoS settings.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>C++ Micro-Task</h3>
+        <p>Create a minimal string publisher that sends "Hello ROS2" at 1 Hz:</p>
+        <pre><code class="c++">#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
+
+class MinimalPublisher : public rclcpp::Node {
+public:
+  MinimalPublisher() : Node("minimal_publisher") {
+    publisher_ = this-&gt;create_publisher&lt;std_msgs::msg::String&gt;(____, 10);
+    timer_ = this-&gt;create_wall_timer(
+      std::chrono::seconds(1),
+      std::bind(&amp;MinimalPublisher::timer_callback, this));
+  }
+
+private:
+  void timer_callback() {
+    auto message = std_msgs::msg::String();
+    message.data = "____";
+    RCLCPP_INFO(this-&gt;get_logger(), "Publishing: '%s'", message.data.c_str());
+    publisher_-&gt;____(____(message));
+  }
+  
+  rclcpp::Publisher&lt;std_msgs::msg::String&gt;::SharedPtr publisher_;
+  rclcpp::TimerBase::SharedPtr timer_;
+};
+
+int main(int argc, char *argv[]) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared&lt;MinimalPublisher&gt;());
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+
+        <h3>Python Micro-Task</h3>
+        <p>Create a matching subscriber that echoes received messages:</p>
+        <pre><code class="python">import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+class MinimalSubscriber(Node):
+    def __init__(self):
+        super().__init__('minimal_subscriber')
+        self.subscription = self.create_subscription(
+            String,
+            '____',
+            self.listener_callback,
+            ____)
+        
+    def listener_callback(self, msg):
+        self.get_logger().info('I heard: "%s"' % msg.____)
+
+def main(args=None):
+    rclpy.init(args=args)
+    minimal_subscriber = MinimalSubscriber()
+    rclpy.____(minimal_subscriber)
+    minimal_subscriber.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Python vs C++)</h2>
+
+        <h3>Publisher Pattern</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto pub = this-&gt;create_publisher&lt;
+  std_msgs::msg::String&gt;(
+  "chatter", 10);</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">self.publisher = self.create_publisher(
+    String, 'chatter', 10)</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Subscriber Pattern</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto sub = this-&gt;create_subscription&lt;
+  std_msgs::msg::String&gt;(
+  "chatter", 10,
+  std::bind(&amp;Node::callback, this, _1));</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">self.subscription = self.create_subscription(
+    String, 'chatter', self.callback, 10)</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Publishing Messages</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto msg = std_msgs::msg::String();
+msg.data = "hello";
+publisher_-&gt;publish(msg);</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">msg = String()
+msg.data = 'hello'
+self.publisher.publish(msg)</code></pre>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>QoS Profile (YAML)</h3>
+        <pre><code class="yaml">chatter_publisher:
+  ros__parameters:
+    qos_overrides:
+      /chatter:
+        publisher:
+          # Keep last 10 messages in queue
+          depth: 10
+          # Best-effort (0) or Reliable (1)
+          reliability: 1
+          # Volatile (0) or Transient-Local (1) - keep last message for late joiners
+          durability: 0
+          # Deadline in nanoseconds (0 = infinite)
+          deadline: 0</code></pre>
+
+        <h3>Launch File Snippet</h3>
+        <pre><code class="python">from launch import LaunchDescription
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    return LaunchDescription([
+        Node(
+            package='my_pkg',
+            executable='talker',
+            name='talker',
+            output='screen'
+        ),
+        Node(
+            package='my_pkg',
+            executable='listener',
+            name='listener',
+            output='screen'
+        )
+    ])</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Terminal 1: Run publisher
+ros2 run my_pkg talker
+
+# Terminal 2: List active topics
+ros2 topic list
+# Expected: /chatter, /rosout, /parameter_events
+
+# Check message rate
+ros2 topic hz /chatter
+# Expected: average rate: 1.000
+
+# Echo messages
+ros2 topic echo /chatter
+# Expected: data: "Hello ROS2" (repeating every 1 second)
+
+# Inspect topic info
+ros2 topic info /chatter
+# Expected: Type: std_msgs/msg/String, Publisher count: 1, Subscription count: 0</code></pre>
+
+        <h3>RQT Graph</h3>
+        <pre><code class="bash">rqt_graph
+# Expected: Node /minimal_publisher connected to topic /chatter connected to /minimal_subscriber</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use <code>ros2 topic bw /chatter</code> to monitor bandwidth usage. For high-frequency topics like laser scans, this helps identify network bottlenecks.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: No Messages Received</h3>
+        <p><strong>Symptom:</strong> Subscriber runs but <code>ros2 topic echo</code> shows nothing.</p>
+        <p><strong>Root Cause:</strong> QoS mismatch between publisher and subscriber. Publisher uses reliable, subscriber uses best-effort.</p>
+        <p><strong>Fix:</strong> Match QoS profiles or use <code>SystemDefaultQoS</code> for both:</p>
+        <pre><code class="c++">// C++ - Use explicit reliable QoS
+auto qos = rclcpp::QoS(rclcpp::KeepLast(10)).reliable();
+publisher_ = this-&gt;create_publisher&lt;std_msgs::msg::String&gt;("chatter", qos);
+subscription_ = this-&gt;create_subscription&lt;std_msgs::msg::String&gt;("chatter", qos, callback);</code></pre>
+
+        <h3>Failure 2: Late-Joining Subscribers Miss Data</h3>
+        <p><strong>Symptom:</strong> Subscriber started after publisher misses initial messages.</p>
+        <p><strong>Root Cause:</strong> Volatile durability policy discards messages for late joiners.</p>
+        <p><strong>Fix:</strong> Use transient-local durability to keep last N messages:</p>
+        <pre><code class="python"># Python - Keep last message for late subscribers
+from rclpy.qos import QoSProfile, DurabilityPolicy
+qos = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+self.publisher = self.create_publisher(String, 'state', qos)</code></pre>
+
+        <h3>Failure 3: Message Queue Overflow</h3>
+        <p><strong>Symptom:</strong> Warning "queue depth exceeded" and dropped messages.</p>
+        <p><strong>Root Cause:</strong> Publisher sends faster than subscriber processes, queue size too small.</p>
+        <p><strong>Fix:</strong> Increase queue depth or throttle publisher rate:</p>
+        <pre><code class="c++">// Increase queue depth from 10 to 100
+auto pub = this-&gt;create_publisher&lt;sensor_msgs::msg::LaserScan&gt;("scan", 100);</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: QoS Mismatch Detection</h3>
+        <p>Intentionally create a QoS incompatibility and observe the failure:</p>
+
+        <pre><code class="python"># Publisher with RELIABLE
+from rclpy.qos import QoSProfile, ReliabilityPolicy
+qos_pub = QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE)
+self.publisher = self.create_publisher(String, 'test', qos_pub)
+
+# Subscriber with BEST_EFFORT
+qos_sub = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
+self.subscription = self.create_subscription(String, 'test', self.callback, qos_sub)</code></pre>
+
+        <p><strong>Detection:</strong> Run both nodes, then check:</p>
+        <pre><code class="bash">ros2 topic info /test --verbose
+# Look for "Incompatible QoS Policies" warning</code></pre>
+
+        <p><strong>Recovery:</strong> Change subscriber to RELIABLE or publisher to BEST_EFFORT to match.</p>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>QoS mismatches don't always throw errors. Nodes may run silently without communicating. Always verify with <code>ros2 topic info --verbose</code>.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Extend the basic talker to publish custom sensor data:</p>
+
+        <ol>
+          <li>Define a custom message type in <code>msg/SensorData.msg</code>:
+            <pre><code>float64 temperature
+float64 humidity
+string location</code></pre>
+          </li>
+          <li>Rebuild package and publish simulated sensor readings</li>
+          <li>Add timestamp to track message age</li>
+          <li>Implement a subscriber that filters messages older than 2 seconds</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="qos.html">QoS Policies</a> - Deep dive into reliability, durability, and lifespan</li>
+          <li><a href="services.html">Services</a> - When you need request/response instead of streaming</li>
+          <li><a href="launch.html">Launch Files</a> - Orchestrate multiple pub/sub nodes</li>
+          <li><a href="bag.html">Bag Recording</a> - Record and replay topic data</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official ROS2 documentation: <code>docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Writing-A-Simple-Cpp-Publisher-And-Subscriber.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="../index.html" class="prev">Home</a>
+        <a href="services.html" class="next">Services</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

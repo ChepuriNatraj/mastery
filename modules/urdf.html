@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URDF Models - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html" class="active">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#robotics">Robotics Model</a> &gt; URDF Models
+      </nav>
+
+      <h1 class="page-title">URDF Models</h1>
+      <p class="page-outcome">Define robot geometry, links, joints, and inertials for simulation and visualization.</p>
+
+      <div class="pills">
+        <span class="pill pill-rviz">Needs RViz</span>
+        <span class="pill pill-required">Required</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>URDF (Unified Robot Description Format) is XML defining robot structure. It specifies links (rigid bodies), joints (connections), collision/visual geometry, and physical properties (mass, inertia). robot_state_publisher converts URDF to TF transforms. Xacro extends URDF with macros, properties, and includes for reusable components. URDF drives RViz visualization, Gazebo simulation, and motion planning collision checking.</p>
+
+        <h3>Why</h3>
+        <p>Manual TF broadcasting for multi-link robots is error-prone. URDF provides single source of truth for robot structure. It enables automatic TF tree generation, collision avoidance in planners, and physically accurate simulation. Proper inertials prevent physics explosions in Gazebo. Visual meshes create realistic rendering. URDF is required for Nav2's costmap footprint and manipulation planning.</p>
+
+        <h3>When</h3>
+        <p>Create URDF for any robot with multiple rigid bodies. Start with simple boxes for rapid prototyping, add meshes later. Use xacro for robots with repeated structures (wheels, sensors). Include inertials only when using Gazebo physics. Keep separate visual and collision geometries - simplified collision meshes improve performance. Version control URDF alongside code for reproducible testing.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Minimal 2-Link Robot (URDF)</h3>
+        <p>Create a simple robot with base and laser:</p>
+        <pre><code class="xml">&lt;?xml version="1.0"?&gt;
+&lt;robot name="simple_robot"&gt;
+  
+  &lt;!-- Base link (robot body) --&gt;
+  &lt;link name="____"&gt;  &lt;!-- base_link --&gt;
+    &lt;visual&gt;
+      &lt;geometry&gt;
+        &lt;box size="0.5 0.3 0.1"/&gt;  &lt;!-- length width height in meters --&gt;
+      &lt;/geometry&gt;
+      &lt;material name="blue"&gt;
+        &lt;color rgba="0 0 1 1"/&gt;  &lt;!-- R G B Alpha --&gt;
+      &lt;/material&gt;
+    &lt;/visual&gt;
+    
+    &lt;collision&gt;
+      &lt;geometry&gt;
+        &lt;box size="0.5 0.3 0.1"/&gt;
+      &lt;/geometry&gt;
+    &lt;/collision&gt;
+    
+    &lt;inertial&gt;
+      &lt;mass value="____"/&gt;  &lt;!-- 10.0 kg --&gt;
+      &lt;inertia ixx="0.1" ixy="0.0" ixz="0.0"
+               iyy="0.1" iyz="0.0"
+               izz="0.1"/&gt;
+    &lt;/inertial&gt;
+  &lt;/link&gt;
+  
+  &lt;!-- Laser link --&gt;
+  &lt;link name="____"&gt;  &lt;!-- laser_frame --&gt;
+    &lt;visual&gt;
+      &lt;geometry&gt;
+        &lt;cylinder radius="0.05" length="0.05"/&gt;
+      &lt;/geometry&gt;
+      &lt;material name="red"&gt;
+        &lt;color rgba="1 0 0 1"/&gt;
+      &lt;/material&gt;
+    &lt;/visual&gt;
+    
+    &lt;collision&gt;
+      &lt;geometry&gt;
+        &lt;cylinder radius="0.05" length="0.05"/&gt;
+      &lt;/geometry&gt;
+    &lt;/collision&gt;
+    
+    &lt;inertial&gt;
+      &lt;mass value="0.5"/&gt;
+      &lt;inertia ixx="0.001" ixy="0.0" ixz="0.0"
+               iyy="0.001" iyz="0.0"
+               izz="0.001"/&gt;
+    &lt;/inertial&gt;
+  &lt;/link&gt;
+  
+  &lt;!-- Joint connecting base to laser --&gt;
+  &lt;joint name="base_to_laser" type="____"&gt;  &lt;!-- fixed --&gt;
+    &lt;parent link="____"/&gt;  &lt;!-- base_link --&gt;
+    &lt;child link="____"/&gt;   &lt;!-- laser_frame --&gt;
+    &lt;origin xyz="0.1 0 0.15" rpy="0 0 0"/&gt;  &lt;!-- x y z roll pitch yaw --&gt;
+  &lt;/joint&gt;
+  
+&lt;/robot&gt;</code></pre>
+
+        <h3>Xacro with Properties</h3>
+        <p>Convert to xacro for reusability:</p>
+        <pre><code class="xml">&lt;?xml version="1.0"?&gt;
+&lt;robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="simple_robot"&gt;
+  
+  &lt;!-- Properties for easy tuning --&gt;
+  &lt;xacro:property name="base_length" value="____"/&gt;  &lt;!-- 0.5 --&gt;
+  &lt;xacro:property name="base_width" value="0.3"/&gt;
+  &lt;xacro:property name="base_height" value="0.1"/&gt;
+  &lt;xacro:property name="base_mass" value="10.0"/&gt;
+  
+  &lt;xacro:property name="laser_x_offset" value="0.1"/&gt;
+  &lt;xacro:property name="laser_z_offset" value="0.15"/&gt;
+  
+  &lt;!-- Macro for inertia calculation (box) --&gt;
+  &lt;xacro:macro name="box_inertia" params="m x y z"&gt;
+    &lt;inertial&gt;
+      &lt;mass value="${____}"/&gt;  &lt;!-- m --&gt;
+      &lt;inertia ixx="${m*(y*y+z*z)/12.0}" ixy="0.0" ixz="0.0"
+               iyy="${m*(x*x+z*z)/12.0}" iyz="0.0"
+               izz="${m*(x*x+y*y)/12.0}"/&gt;
+    &lt;/inertial&gt;
+  &lt;/xacro:macro&gt;
+  
+  &lt;link name="base_link"&gt;
+    &lt;visual&gt;
+      &lt;geometry&gt;
+        &lt;box size="${base_length} ${base_width} ${base_height}"/&gt;
+      &lt;/geometry&gt;
+      &lt;material name="blue"&gt;
+        &lt;color rgba="0 0 1 1"/&gt;
+      &lt;/material&gt;
+    &lt;/visual&gt;
+    &lt;collision&gt;
+      &lt;geometry&gt;
+        &lt;box size="${base_length} ${base_width} ${base_height}"/&gt;
+      &lt;/geometry&gt;
+    &lt;/collision&gt;
+    &lt;xacro:box_inertia m="${base_mass}" 
+                        x="${base_length}" 
+                        y="${base_width}" 
+                        z="${base_height}"/&gt;
+  &lt;/link&gt;
+  
+  &lt;link name="laser_frame"&gt;
+    &lt;visual&gt;
+      &lt;geometry&gt;
+        &lt;cylinder radius="0.05" length="0.05"/&gt;
+      &lt;/geometry&gt;
+      &lt;material name="red"&gt;
+        &lt;color rgba="1 0 0 1"/&gt;
+      &lt;/material&gt;
+    &lt;/visual&gt;
+  &lt;/link&gt;
+  
+  &lt;joint name="base_to_laser" type="fixed"&gt;
+    &lt;parent link="base_link"/&gt;
+    &lt;child link="laser_frame"/&gt;
+    &lt;origin xyz="${laser_x_offset} 0 ${laser_z_offset}" rpy="0 0 0"/&gt;
+  &lt;/joint&gt;
+  
+&lt;/robot&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (URDF Structure)</h2>
+
+        <h3>Link Elements</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Element</th>
+              <th>Purpose</th>
+              <th>Required</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>&lt;visual&gt;</code></td>
+              <td>Appearance in RViz/Gazebo GUI</td>
+              <td>For visualization</td>
+            </tr>
+            <tr>
+              <td><code>&lt;collision&gt;</code></td>
+              <td>Physics collision detection</td>
+              <td>For simulation/planning</td>
+            </tr>
+            <tr>
+              <td><code>&lt;inertial&gt;</code></td>
+              <td>Mass and inertia tensor</td>
+              <td>For Gazebo physics</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Joint Types</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Degrees of Freedom</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>fixed</code></td>
+              <td>0</td>
+              <td>Sensor mounts, static attachments</td>
+            </tr>
+            <tr>
+              <td><code>revolute</code></td>
+              <td>1 (rotation)</td>
+              <td>Hinges, wheels with limits</td>
+            </tr>
+            <tr>
+              <td><code>continuous</code></td>
+              <td>1 (rotation, no limits)</td>
+              <td>Freely spinning wheels</td>
+            </tr>
+            <tr>
+              <td><code>prismatic</code></td>
+              <td>1 (translation)</td>
+              <td>Linear actuators, elevators</td>
+            </tr>
+            <tr>
+              <td><code>floating</code></td>
+              <td>6</td>
+              <td>Rarely used (base link in some models)</td>
+            </tr>
+            <tr>
+              <td><code>planar</code></td>
+              <td>2</td>
+              <td>Rarely used</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Geometry Primitives</h3>
+        <pre><code class="xml">&lt;!-- Box --&gt;
+&lt;geometry&gt;
+  &lt;box size="length width height"/&gt;
+&lt;/geometry&gt;
+
+&lt;!-- Cylinder --&gt;
+&lt;geometry&gt;
+  &lt;cylinder radius="0.1" length="0.5"/&gt;
+&lt;/geometry&gt;
+
+&lt;!-- Sphere --&gt;
+&lt;geometry&gt;
+  &lt;sphere radius="0.2"/&gt;
+&lt;/geometry&gt;
+
+&lt;!-- Mesh (STL, DAE, OBJ) --&gt;
+&lt;geometry&gt;
+  &lt;mesh filename="package://my_robot/meshes/base.stl" scale="1 1 1"/&gt;
+&lt;/geometry&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Robot State Publisher Launch</h3>
+        <pre><code class="python">from launch import LaunchDescription
+from launch_ros.actions import Node
+import os
+from ament_index_python.packages import get_package_share_directory
+
+def generate_launch_description():
+    # Load URDF file
+    urdf_file = os.path.join(
+        get_package_share_directory('my_robot_description'),
+        'urdf',
+        'robot.urdf.xacro'
+    )
+    
+    # Process xacro to URDF
+    from launch.actions import ExecuteProcess
+    xacro_process = ExecuteProcess(
+        cmd=['xacro', urdf_file],
+        output='screen'
+    )
+    
+    # Or read directly if pure URDF
+    with open(urdf_file, 'r') as f:
+        robot_description = f.read()
+    
+    return LaunchDescription([
+        Node(
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
+            output='screen',
+            parameters=[{
+                'robot_description': robot_description,
+                'publish_frequency': 30.0
+            }]
+        ),
+        
+        # Joint state publisher (for testing without real hardware)
+        Node(
+            package='joint_state_publisher_gui',
+            executable='joint_state_publisher_gui',
+            name='joint_state_publisher_gui'
+        )
+    ])</code></pre>
+
+        <h3>Inertia Calculations (Common Shapes)</h3>
+        <pre><code class="xml">&lt;!-- Box inertia (m=mass, x/y/z=dimensions) --&gt;
+&lt;inertia ixx="${m*(y*y+z*z)/12.0}" ixy="0.0" ixz="0.0"
+         iyy="${m*(x*x+z*z)/12.0}" iyz="0.0"
+         izz="${m*(x*x+y*y)/12.0}"/&gt;
+
+&lt;!-- Cylinder inertia (axis along z, r=radius, h=height) --&gt;
+&lt;inertia ixx="${m*(3*r*r+h*h)/12.0}" ixy="0.0" ixz="0.0"
+         iyy="${m*(3*r*r+h*h)/12.0}" iyz="0.0"
+         izz="${m*r*r/2.0}"/&gt;
+
+&lt;!-- Sphere inertia (r=radius) --&gt;
+&lt;inertia ixx="${2*m*r*r/5.0}" ixy="0.0" ixz="0.0"
+         iyy="${2*m*r*r/5.0}" iyz="0.0"
+         izz="${2*m*r*r/5.0}"/&gt;</code></pre>
+
+        <h3>Gazebo-Specific Extensions</h3>
+        <pre><code class="xml">&lt;robot&gt;
+  &lt;!-- Standard URDF link --&gt;
+  &lt;link name="base_link"&gt;...&lt;/link&gt;
+  
+  &lt;!-- Gazebo material/friction/physics --&gt;
+  &lt;gazebo reference="base_link"&gt;
+    &lt;material&gt;Gazebo/Blue&lt;/material&gt;
+    &lt;mu1&gt;0.5&lt;/mu1&gt;  &lt;!-- Friction coefficient 1 --&gt;
+    &lt;mu2&gt;0.5&lt;/mu2&gt;  &lt;!-- Friction coefficient 2 --&gt;
+    &lt;kp&gt;1000000.0&lt;/kp&gt;  &lt;!-- Contact stiffness --&gt;
+    &lt;kd&gt;1.0&lt;/kd&gt;  &lt;!-- Contact damping --&gt;
+  &lt;/gazebo&gt;
+  
+  &lt;!-- Gazebo plugin (sensor, controller) --&gt;
+  &lt;gazebo reference="laser_frame"&gt;
+    &lt;sensor type="ray" name="laser_sensor"&gt;
+      &lt;update_rate&gt;10&lt;/update_rate&gt;
+      &lt;ray&gt;
+        &lt;scan&gt;
+          &lt;horizontal&gt;
+            &lt;samples&gt;360&lt;/samples&gt;
+            &lt;resolution&gt;1.0&lt;/resolution&gt;
+            &lt;min_angle&gt;-3.14159&lt;/min_angle&gt;
+            &lt;max_angle&gt;3.14159&lt;/max_angle&gt;
+          &lt;/horizontal&gt;
+        &lt;/scan&gt;
+        &lt;range&gt;
+          &lt;min&gt;0.1&lt;/min&gt;
+          &lt;max&gt;10.0&lt;/max&gt;
+        &lt;/range&gt;
+      &lt;/ray&gt;
+      &lt;plugin name="laser_controller" filename="libgazebo_ros_ray_sensor.so"&gt;
+        &lt;ros&gt;
+          &lt;remapping&gt;~/out:=scan&lt;/remapping&gt;
+        &lt;/ros&gt;
+        &lt;output_type&gt;sensor_msgs/LaserScan&lt;/output_type&gt;
+        &lt;frame_name&gt;laser_frame&lt;/frame_name&gt;
+      &lt;/plugin&gt;
+    &lt;/sensor&gt;
+  &lt;/gazebo&gt;
+&lt;/robot&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Parse and validate URDF
+check_urdf robot.urdf
+# Expected: "robot name is: simple_robot", "Successfully parsed urdf"
+
+# Convert xacro to URDF
+xacro robot.urdf.xacro &gt; robot.urdf
+
+# Visualize in RViz
+ros2 launch my_robot_description display.launch.py
+
+# Check TF tree generated from URDF
+ros2 run tf2_tools view_frames
+# Expected: All links from URDF appear as frames
+
+# Echo joint states
+ros2 topic echo /joint_states
+# Expected: Messages with joint positions</code></pre>
+
+        <h3>RViz Visualization</h3>
+        <pre><code class="bash"># Standard RViz URDF display
+rviz2
+
+# In RViz:
+# 1. Add display: RobotModel
+# 2. Set topic: /robot_description
+# 3. Set Fixed Frame: base_link
+# 4. Expected: Robot appears with correct geometry and colors
+# 5. Use joint_state_publisher_gui to move joints interactively</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use <code>urdf_to_graphiz</code> to generate visual diagrams of your URDF structure: <code>urdf_to_graphiz robot.urdf</code> creates a PDF showing all links and joints.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Robot Falls Through Ground in Gazebo</h3>
+        <p><strong>Symptom:</strong> Robot spawns but immediately falls infinitely in simulation.</p>
+        <p><strong>Root Cause:</strong> Missing or incorrect inertial properties, zero mass, or missing collision geometry.</p>
+        <p><strong>Fix:</strong> Add proper inertials to all links:</p>
+        <pre><code class="xml">&lt;link name="base_link"&gt;
+  &lt;visual&gt;...&lt;/visual&gt;
+  
+  &lt;!-- Must have collision --&gt;
+  &lt;collision&gt;
+    &lt;geometry&gt;
+      &lt;box size="0.5 0.3 0.1"/&gt;
+    &lt;/geometry&gt;
+  &lt;/collision&gt;
+  
+  &lt;!-- Must have non-zero mass and inertia --&gt;
+  &lt;inertial&gt;
+    &lt;mass value="10.0"/&gt;  &lt;!-- NOT 0.0 --&gt;
+    &lt;inertia ixx="0.1" ixy="0.0" ixz="0.0"
+             iyy="0.1" iyz="0.0"
+             izz="0.1"/&gt;  &lt;!-- NOT all zeros --&gt;
+  &lt;/inertial&gt;
+&lt;/link&gt;</code></pre>
+
+        <h3>Failure 2: Joint Origin Misalignment</h3>
+        <p><strong>Symptom:</strong> Child link appears in wrong position relative to parent in RViz.</p>
+        <p><strong>Root Cause:</strong> Joint origin xyz/rpy incorrectly specified or visual/collision origins don't match.</p>
+        <p><strong>Fix:</strong> Verify origin carefully with correct coordinate system:</p>
+        <pre><code class="xml">&lt;joint name="base_to_sensor" type="fixed"&gt;
+  &lt;parent link="base_link"/&gt;
+  &lt;child link="sensor_link"/&gt;
+  &lt;!-- xyz: x forward, y left, z up in parent frame --&gt;
+  &lt;!-- rpy: roll(x), pitch(y), yaw(z) in radians --&gt;
+  &lt;origin xyz="0.2 0 0.1" rpy="0 0 0"/&gt;
+&lt;/joint&gt;
+
+&lt;!-- If visual geometry center doesn't match link origin, offset it --&gt;
+&lt;link name="sensor_link"&gt;
+  &lt;visual&gt;
+    &lt;origin xyz="0 0 0.025" rpy="0 0 0"/&gt;  &lt;!-- Offset visual center --&gt;
+    &lt;geometry&gt;
+      &lt;cylinder radius="0.05" length="0.05"/&gt;
+    &lt;/geometry&gt;
+  &lt;/visual&gt;
+&lt;/link&gt;</code></pre>
+
+        <h3>Failure 3: Xacro Not Expanding</h3>
+        <p><strong>Symptom:</strong> <code>${property}</code> appears literally in error messages instead of expanded value.</p>
+        <p><strong>Root Cause:</strong> Loading xacro file directly without processing through xacro command.</p>
+        <p><strong>Fix:</strong> Process xacro before loading:</p>
+        <pre><code class="python"># Wrong - loads xacro file directly
+with open('robot.urdf.xacro', 'r') as f:
+    robot_description = f.read()
+
+# Correct - process xacro first
+import subprocess
+xacro_output = subprocess.check_output(
+    ['xacro', 'robot.urdf.xacro']
+).decode('utf-8')
+robot_description = xacro_output
+
+# Or use xacro Python API
+import xacro
+robot_description = xacro.process_file('robot.urdf.xacro').toxml()</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Debug Invalid Inertia</h3>
+        <p>Create URDF with intentionally bad inertia and observe Gazebo failure:</p>
+
+        <pre><code class="xml">&lt;link name="bad_link"&gt;
+  &lt;visual&gt;
+    &lt;geometry&gt;&lt;box size="1 1 1"/&gt;&lt;/geometry&gt;
+  &lt;/visual&gt;
+  &lt;collision&gt;
+    &lt;geometry&gt;&lt;box size="1 1 1"/&gt;&lt;/geometry&gt;
+  &lt;/collision&gt;
+  
+  &lt;!-- Invalid: diagonal inertia elements must be positive --&gt;
+  &lt;inertial&gt;
+    &lt;mass value="10.0"/&gt;
+    &lt;inertia ixx="-0.1" ixy="0.0" ixz="0.0"
+             iyy="0.1" iyz="0.0"
+             izz="0.1"/&gt;
+  &lt;/inertial&gt;
+&lt;/link&gt;</code></pre>
+
+        <p><strong>Detection:</strong> Spawn in Gazebo:</p>
+        <pre><code class="bash">ros2 launch gazebo_ros gazebo.launch.py
+ros2 run gazebo_ros spawn_entity.py -entity my_robot -file robot.urdf
+# Expected: Gazebo error about invalid inertia matrix</code></pre>
+
+        <p><strong>Recovery:</strong> Use positive definite inertia matrix (all diagonal elements positive, satisfy triangle inequalities).</p>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Simplified collision geometry significantly improves Gazebo performance. Use primitive shapes (boxes, cylinders) for collision even if visual uses detailed meshes.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a complete mobile robot URDF:</p>
+
+        <ol>
+          <li>Create differential drive robot with base, two driven wheels, two caster wheels</li>
+          <li>Add laser sensor with proper Gazebo ray plugin</li>
+          <li>Add camera sensor with camera plugin</li>
+          <li>Add IMU sensor with IMU plugin</li>
+          <li>Use xacro macros to define reusable wheel components</li>
+          <li>Add Gazebo differential drive controller plugin</li>
+          <li>Include proper joint limits, friction, and damping for wheels</li>
+          <li>Test in Gazebo with teleop to drive robot around</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="tf.html">TF Transforms</a> - URDF automatically generates TF tree</li>
+          <li><a href="gazebo.html">Gazebo Simulation</a> - Spawn and simulate URDF models</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - Uses URDF for footprint calculation</li>
+          <li><a href="costmaps.html">Costmaps</a> - Robot footprint from URDF collision geometry</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official docs: <code>wiki.ros.org/urdf/Tutorials</code> and <code>docs.ros.org/en/humble/Tutorials/Intermediate/URDF/URDF-Main.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="tf.html" class="prev">TF Transforms</a>
+        <a href="gazebo.html" class="next">Gazebo Simulation</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

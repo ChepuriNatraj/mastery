@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Testing - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html" class="active">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#ops">Ops &amp; Quality</a> &gt; Testing
+      </nav>
+
+      <h1 class="page-title">Testing (Unit, Integration, Launch)</h1>
+      <p class="page-outcome">Build robust test suites for ROS2 nodes, services, and launch systems.</p>
+
+      <div class="pills">
+        <span class="pill pill-test">Testing</span>
+        <span class="pill pill-ci">CI/CD</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>ROS2 testing includes unit tests (individual functions), integration tests (node interactions), and launch tests (full system). C++ uses gtest framework, Python uses pytest. <code>launch_testing</code> spins up nodes, sends messages, and verifies behavior. Test fixtures set up nodes, publishers, subscribers for isolated testing. Mocking tools (rclcpp_lifecycle mocks, test_msgs) simulate dependencies. Coverage tools (gcov, pytest-cov) track tested code. Colcon runs tests with <code>colcon test</code>, results in <code>log/</code>. CI/CD integrates with GitHub Actions, Jenkins using colcon test results.</p>
+
+        <h3>Why</h3>
+        <p>Untested code breaks during refactoring - tests catch regressions. Integration tests verify pub/sub QoS compatibility, service timeouts, action preemption. Launch tests ensure system-level behavior (navigation, localization) works end-to-end. Tests document expected behavior better than comments. Automated testing in CI prevents bad commits from merging. Coverage reports identify untested code paths. Tests enable confident upgrades (ROS2 Humble → Iron) by revealing breaking changes.</p>
+
+        <h3>When</h3>
+        <p>Write unit tests for all non-trivial functions (> 10 lines). Integration tests for every pub/sub pair, service, action. Launch tests for critical behaviors (autonomous navigation, emergency stop). Run tests before every commit (<code>colcon test</code>). Add coverage checks to CI (require > 80%). Use TDD (Test-Driven Development) for complex algorithms - write test first, then implementation. Mock hardware interfaces to enable testing without robot. Test failure modes (network drop, sensor timeout, invalid input).</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>Test Types Comparison</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Scope</th>
+              <th>Tools</th>
+              <th>Speed</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Unit Test</td>
+              <td>Single function/class</td>
+              <td>gtest, pytest</td>
+              <td>Fast (ms)</td>
+              <td>Math functions, data transforms</td>
+            </tr>
+            <tr>
+              <td>Integration Test</td>
+              <td>Node interaction</td>
+              <td>gtest + rclcpp, pytest + rclpy</td>
+              <td>Medium (100ms-1s)</td>
+              <td>Pub/sub, service calls, parameter validation</td>
+            </tr>
+            <tr>
+              <td>Launch Test</td>
+              <td>Full system</td>
+              <td>launch_testing</td>
+              <td>Slow (seconds)</td>
+              <td>Navigation, multi-node coordination</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>C++ Unit Test (gtest)</h3>
+        <pre><code class="cpp">// test/test_my_math.cpp
+#include &lt;gtest/gtest.h&gt;
+#include "my_pkg/my_math.hpp"
+
+TEST(MyMathTest, AdditionWorks) {
+    EXPECT_EQ(add(2, 3), 5);
+    EXPECT_EQ(add(-1, 1), ____);  // 0
+}
+
+TEST(MyMathTest, DivisionByZeroThrows) {
+    EXPECT_THROW(divide(10, 0), std::runtime_error);
+}
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}</code></pre>
+
+        <pre><code class="cmake"># CMakeLists.txt
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  
+  ament_add_gtest(test_my_math test/test_my_math.cpp)
+  target_link_libraries(test_my_math my_lib)
+endif()</code></pre>
+
+        <h3>Python Unit Test (pytest)</h3>
+        <pre><code class="python"># test/test_my_math.py
+import pytest
+from my_py_pkg.my_math import add, divide
+
+def test_addition():
+    assert add(2, 3) == 5
+    assert add(-1, 1) == ____  # 0
+
+def test_division_by_zero():
+    with pytest.raises(ZeroDivisionError):
+        divide(10, 0)</code></pre>
+
+        <pre><code class="python"># setup.py
+setup(
+    # ...
+    tests_require=['____'],  # pytest
+)</code></pre>
+
+        <pre><code class="xml">&lt;!-- package.xml --&gt;
+&lt;test_depend&gt;python3-pytest&lt;/test_depend&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Integration Test)</h2>
+
+        <h3>C++ Integration Test (Testing Publisher/Subscriber)</h3>
+        <pre><code class="cpp">// test/test_talker_listener.cpp
+#include &lt;gtest/gtest.h&gt;
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
+#include &lt;chrono&gt;
+
+using namespace std::chrono_literals;
+
+class TalkerListenerTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        rclcpp::init(0, nullptr);
+        node_ = rclcpp::Node::make_shared("test_node");
+        
+        // Create subscriber to listen
+        received_ = false;
+        sub_ = node_->create_subscription&lt;std_msgs::msg::String&gt;(
+            "chatter", 10,
+            [this](std_msgs::msg::String::SharedPtr msg) {
+                received_data_ = msg->data;
+                received_ = true;
+            }
+        );
+        
+        // Create publisher to test
+        pub_ = node_->create_publisher&lt;std_msgs::msg::String&gt;(
+            "chatter", 10
+        );
+    }
+    
+    void TearDown() override {
+        rclcpp::shutdown();
+    }
+    
+    rclcpp::Node::SharedPtr node_;
+    rclcpp::Publisher&lt;std_msgs::msg::String&gt;::SharedPtr pub_;
+    rclcpp::Subscription&lt;std_msgs::msg::String&gt;::SharedPtr sub_;
+    bool received_;
+    std::string received_data_;
+};
+
+TEST_F(TalkerListenerTest, MessageReceived) {
+    // Publish message
+    auto msg = std_msgs::msg::String();
+    msg.data = "Hello Test";
+    pub_->publish(msg);
+    
+    // Spin until received or timeout
+    auto start = std::chrono::steady_clock::now();
+    while (!received_) {
+        rclcpp::spin_some(node_);
+        
+        auto elapsed = std::chrono::steady_clock::now() - start;
+        if (elapsed > ____s) {  // 1s timeout
+            break;
+        }
+        
+        std::this_thread::sleep_for(10ms);
+    }
+    
+    // Verify
+    EXPECT_TRUE(received_);
+    EXPECT_EQ(received_data_, "____");  // Hello Test
+}
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}</code></pre>
+
+        <h3>Python Integration Test (Testing Service)</h3>
+        <pre><code class="python"># test/test_add_service.py
+import pytest
+import rclpy
+from rclpy.node import Node
+from example_interfaces.srv import AddTwoInts
+
+class TestAddService:
+    @classmethod
+    def setup_class(cls):
+        rclpy.init()
+    
+    @classmethod
+    def teardown_class(cls):
+        rclpy.shutdown()
+    
+    def test_service_call(self):
+        # Create client node
+        node = Node('test_add_client')
+        client = node.create_client(AddTwoInts, 'add_two_ints')
+        
+        # Wait for service
+        assert client.wait_for_service(timeout_sec=____), \
+            "Service not available"  # 5.0
+        
+        # Call service
+        request = AddTwoInts.Request()
+        request.a = 10
+        request.b = 20
+        
+        future = client.call_async(request)
+        rclpy.spin_until_future_complete(node, future, timeout_sec=2.0)
+        
+        # Verify response
+        assert future.result() is not None
+        assert future.result().sum == ____  # 30
+        
+        node.destroy_node()</code></pre>
+
+        <h3>Launch Test (System-Level)</h3>
+        <pre><code class="python"># test/test_navigation_launch.py
+import unittest
+import launch
+import launch_ros
+import launch_testing
+import launch_testing.actions
+from geometry_msgs.msg import PoseStamped
+import rclpy
+from rclpy.node import Node
+
+def generate_test_description():
+    # Launch nodes to test
+    navigation_node = launch_ros.actions.Node(
+        package='nav2_bringup',
+        executable='bt_navigator',
+        parameters=[{'use_sim_time': True}]
+    )
+    
+    return launch.LaunchDescription([
+        navigation_node,
+        launch_testing.actions.ReadyToTest()
+    ])
+
+class TestNavigation(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        rclpy.init()
+    
+    @classmethod
+    def tearDownClass(cls):
+        rclpy.shutdown()
+    
+    def test_navigation_accepts_goal(self, proc_output):
+        # Create test node
+        node = Node('test_nav_client')
+        
+        # Create goal publisher
+        goal_pub = node.create_publisher(
+            PoseStamped, 
+            '/goal_pose', 
+            10
+        )
+        
+        # Wait for navigation to be ready
+        import time
+        time.sleep(____)  # 2 seconds for startup
+        
+        # Send goal
+        goal = PoseStamped()
+        goal.header.frame_id = 'map'
+        goal.pose.position.x = 5.0
+        goal_pub.publish(goal)
+        
+        # Verify goal accepted (check logs or topic)
+        # In real test, subscribe to action feedback
+        
+        node.destroy_node()</code></pre>
+
+        <pre><code class="cmake"># CMakeLists.txt for launch tests
+if(BUILD_TESTING)
+  find_package(launch_testing_ament_cmake REQUIRED)
+  
+  add_launch_test(
+    test/test_navigation_launch.py
+    TIMEOUT 30
+  )
+endif()</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Running Tests</h3>
+        <pre><code class="bash"># Run all tests in workspace
+colcon test
+
+# Run tests for single package
+colcon test --packages-select my_pkg
+
+# Show test output immediately
+colcon test --event-handlers console_direct+
+
+# Run with verbose output
+colcon test --pytest-args -v
+
+# Run specific test
+colcon test --packages-select my_pkg \
+  --pytest-args -k test_specific_function</code></pre>
+
+        <h3>Test Results</h3>
+        <pre><code class="bash"># View test summary
+colcon test-result --all
+
+# Verbose results with failure details
+colcon test-result --verbose
+
+# Results stored in:
+# log/latest_test/my_pkg/stdout.log
+# log/latest_test/my_pkg/stderr.log</code></pre>
+
+        <h3>Code Coverage (C++)</h3>
+        <pre><code class="bash"># Build with coverage flags
+colcon build --cmake-args \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_CXX_FLAGS="--coverage" \
+  -DCMAKE_C_FLAGS="--coverage"
+
+# Run tests
+colcon test
+
+# Generate coverage report
+cd build/my_pkg
+gcov *.cpp
+lcov --capture --directory . --output-file coverage.info
+genhtml coverage.info --output-directory coverage_html
+
+# View: open coverage_html/index.html</code></pre>
+
+        <h3>Code Coverage (Python)</h3>
+        <pre><code class="bash"># Install coverage tool
+pip3 install pytest-cov
+
+# Run tests with coverage
+colcon test --packages-select my_py_pkg \
+  --pytest-args --cov=my_py_pkg --cov-report=html
+
+# View: open build/my_py_pkg/____/index.html  # htmlcov</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Test Execution Checks</h3>
+        <pre><code class="bash"># Check all tests passed
+colcon test-result --all
+# Expected: "X tests passed, 0 tests failed"
+
+# Look for specific test
+colcon test-result --all | grep test_my_function
+# Shows: PASS or FAIL
+
+# Check test count
+find log/latest_test -name "*.xml" | wc -l
+# Should match expected test count</code></pre>
+
+        <h3>CI/CD Integration (GitHub Actions)</h3>
+        <pre><code class="yaml"># .github/workflows/test.yml
+name: ROS2 Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup ROS2
+        uses: ros-tooling/setup-ros@v0.6
+        with:
+          required-ros-distributions: humble
+      
+      - name: Install dependencies
+        run: |
+          rosdep update
+          rosdep install --from-paths src --ignore-src -y
+      
+      - name: Build
+        run: colcon build
+      
+      - name: Test
+        run: colcon test --event-handlers console_direct+
+      
+      - name: Test Results
+        run: colcon test-result --verbose
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./build/my_pkg/coverage.info</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Add test shortcuts to package.json: <code>"test": "colcon test --packages-select my_pkg && colcon test-result --verbose"</code>. Run with <code>npm test</code> (if using Node for tooling).</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Test Timeout</h3>
+        <p><strong>Symptom:</strong> Test hangs, eventually times out.</p>
+        <p><strong>Root Cause:</strong> Spinning forever waiting for message/service that never arrives.</p>
+        <p><strong>Fix:</strong> Add timeout to spin:</p>
+        <pre><code class="cpp">// Bad: infinite wait
+while (!received_) {
+    rclcpp::spin_some(node_);
+}
+
+// Good: timeout after 1 second
+auto start = std::chrono::steady_clock::now();
+while (!received_) {
+    rclcpp::spin_some(node_);
+    
+    auto elapsed = std::chrono::steady_clock::now() - start;
+    if (elapsed > ____s) {  // 1
+        FAIL() &lt;&lt; "Timeout waiting for message";
+    }
+}</code></pre>
+
+        <h3>Failure 2: QoS Mismatch in Test</h3>
+        <p><strong>Symptom:</strong> Publisher sends, subscriber never receives in test.</p>
+        <p><strong>Root Cause:</strong> QoS profile mismatch (publisher BEST_EFFORT, subscriber RELIABLE).</p>
+        <p><strong>Fix:</strong> Match QoS profiles:</p>
+        <pre><code class="cpp">// Publisher in node
+auto qos = rclcpp::QoS(10).best_effort();
+pub_ = create_publisher&lt;std_msgs::msg::String&gt;("topic", qos);
+
+// Subscriber in test must match
+auto qos_test = rclcpp::QoS(10).____ ();  // best_effort
+sub_ = node_->create_subscription&lt;std_msgs::msg::String&gt;(
+    "topic", qos_test, callback
+);</code></pre>
+
+        <h3>Failure 3: Race Condition</h3>
+        <p><strong>Symptom:</strong> Test passes sometimes, fails randomly.</p>
+        <p><strong>Root Cause:</strong> Callback not executed before assertion.</p>
+        <p><strong>Fix:</strong> Wait for condition:</p>
+        <pre><code class="python"># Bad: check immediately
+node.send_request()
+assert node.response_received  # Might be False!
+
+# Good: wait for condition
+import time
+timeout = 2.0
+start = time.time()
+while not node.response_received:
+    rclpy.spin_once(node, timeout_sec=0.1)
+    if time.time() - start > timeout:
+        assert False, "Timeout waiting for response"
+
+assert node.response_received</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Test Without Initialization</h3>
+        <p>Forget to initialize rclpy/rclcpp in test:</p>
+
+        <pre><code class="python"># test/test_broken.py - intentional error
+import rclpy
+from rclpy.node import Node
+
+def test_node_creation():
+    # rclpy.init()  # MISSING!
+    
+    node = Node('test_node')  # Will crash
+    assert node is not None
+    
+    node.destroy_node()
+    # rclpy.shutdown()</code></pre>
+
+        <p><strong>Observe:</strong></p>
+        <pre><code class="bash">colcon test --packages-select my_pkg
+# Error: rclpy.exceptions.NotInitializedException: 
+#        context is not initialized</code></pre>
+
+        <p><strong>Detection:</strong> Test crashes immediately, check logs:</p>
+        <pre><code class="bash">colcon test-result --verbose
+# Shows: NotInitializedException</code></pre>
+
+        <p><strong>Recovery:</strong> Add initialization:</p>
+        <pre><code class="python">def test_node_creation():
+    ____ .init()  # rclpy
+    node = Node('test_node')
+    assert node is not None
+    node.destroy_node()
+    rclpy.shutdown()</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Always pair <code>rclpy.init()</code> with <code>rclpy.shutdown()</code> in tests. Use fixtures (<code>@pytest.fixture</code>) or test classes (<code>setup_class</code>/<code>teardown_class</code>) to avoid forgetting.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build comprehensive test infrastructure:</p>
+
+        <ol>
+          <li>Create test fixtures library for common setups (mock sensors, fake TF broadcaster)</li>
+          <li>Implement property-based testing with Hypothesis (test all possible inputs)</li>
+          <li>Build performance regression tests (track node latency, CPU usage over time)</li>
+          <li>Create hardware-in-the-loop (HIL) tests with real sensors/actuators</li>
+          <li>Implement mutation testing (inject bugs, verify tests catch them)</li>
+          <li>Build test data generator for bag files (simulate sensor scenarios)</li>
+          <li>Create visual test report dashboard (show coverage, trends, flakiness)</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="diagnostics.html">Diagnostics</a> - Next: Runtime health monitoring</li>
+          <li><a href="build.html">Build System</a> - Test integration with colcon</li>
+          <li><a href="launch.html">Launch Files</a> - Launch testing framework</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>ROS2 testing guide: <code>docs.ros.org/en/humble/Tutorials/Intermediate/Testing/Testing-Main.html</code></p>
+          <p>launch_testing docs: <code>github.com/ros2/launch/tree/humble/launch_testing</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="build.html" class="prev">Build System</a>
+        <a href="diagnostics.html" class="next">Diagnostics</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QoS Policies - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html" class="active">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#core">Core ROS2</a> &gt; QoS Policies
+      </nav>
+
+      <h1 class="page-title">QoS Policies</h1>
+      <p class="page-outcome">Control reliability, durability, and latency for data flows.</p>
+
+      <div class="pills">
+        <span class="pill pill-cpu">CPU-Light</span>
+        <span class="pill pill-required">Required</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Quality of Service (QoS) policies control how DDS delivers messages between publishers and subscribers. Key policies include reliability (best-effort vs reliable), durability (volatile vs transient-local), history (keep-last vs keep-all), depth (queue size), deadline, and lifespan. Publishers and subscribers must have compatible QoS for communication to occur.</p>
+
+        <h3>Why</h3>
+        <p>Different data types need different delivery guarantees. Sensor data tolerates drops for low latency. Commands need reliable delivery. State messages require durability for late joiners. QoS mismatches are the most common silent failure in ROS2. Understanding QoS prevents data loss and enables performance tuning for wireless networks and high-frequency sensors.</p>
+
+        <h3>When</h3>
+        <p>Use best-effort for high-frequency sensor data where latest value matters most. Use reliable for commands and state updates. Set transient-local durability for configuration topics that late subscribers need. Increase depth for bursty data. Always check QoS compatibility with <code>ros2 topic info --verbose</code> when topics don't receive data.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>C++ Micro-Task</h3>
+        <p>Create publishers with different QoS profiles:</p>
+        <pre><code class="c++">#include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "std_msgs/msg/string.hpp"
+
+class QoSDemo : public rclcpp::Node {
+public:
+  QoSDemo() : Node("qos_demo") {
+    // Best-effort for high-frequency sensor data
+    auto sensor_qos = rclcpp::QoS(rclcpp::KeepLast(10))
+      .best_effort()
+      .____();  // durability_volatile
+    
+    sensor_pub_ = this-&gt;create_publisher&lt;sensor_msgs::msg::LaserScan&gt;(
+      "scan", ____);
+    
+    // Reliable with transient-local for state messages
+    auto state_qos = rclcpp::QoS(rclcpp::KeepLast(1))
+      .____()  // reliable
+      .transient_local();
+    
+    state_pub_ = this-&gt;create_publisher&lt;std_msgs::msg::String&gt;(
+      "robot_state", state_qos);
+    
+    // System default QoS (compatible with most ROS tools)
+    auto default_qos = rclcpp::____();
+    
+    cmd_pub_ = this-&gt;create_publisher&lt;std_msgs::msg::String&gt;(
+      "cmd_vel", default_qos);
+    
+    // Custom QoS with deadline
+    auto deadline_qos = rclcpp::QoS(rclcpp::KeepLast(10))
+      .reliable()
+      .deadline(std::chrono::milliseconds(____));  // Max time between messages
+    
+    heartbeat_pub_ = this-&gt;create_publisher&lt;std_msgs::msg::String&gt;(
+      "heartbeat", deadline_qos);
+  }
+
+private:
+  rclcpp::Publisher&lt;sensor_msgs::msg::LaserScan&gt;::SharedPtr sensor_pub_;
+  rclcpp::Publisher&lt;std_msgs::msg::String&gt;::SharedPtr state_pub_;
+  rclcpp::Publisher&lt;std_msgs::msg::String&gt;::SharedPtr cmd_pub_;
+  rclcpp::Publisher&lt;std_msgs::msg::String&gt;::SharedPtr heartbeat_pub_;
+};
+
+int main(int argc, char **argv) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared&lt;QoSDemo&gt;());
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+
+        <h3>Python Micro-Task</h3>
+        <p>Create matching subscribers with QoS compatibility:</p>
+        <pre><code class="python">import rclpy
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
+from sensor_msgs.msg import LaserScan
+from std_msgs.msg import String
+
+class QoSSubscriber(Node):
+    def __init__(self):
+        super().__init__('qos_subscriber')
+        
+        # Best-effort for sensor data
+        sensor_qos = QoSProfile(
+            depth=____,
+            reliability=ReliabilityPolicy.____,  # BEST_EFFORT
+            durability=DurabilityPolicy.VOLATILE
+        )
+        
+        self.sensor_sub = self.create_subscription(
+            LaserScan, 'scan', self.sensor_callback, ____)
+        
+        # Reliable transient-local for state
+        state_qos = QoSProfile(
+            depth=1,
+            reliability=ReliabilityPolicy.____,  # RELIABLE
+            durability=DurabilityPolicy.____  # TRANSIENT_LOCAL
+        )
+        
+        self.state_sub = self.create_subscription(
+            String, 'robot_state', self.state_callback, state_qos)
+        
+        # System default
+        from rclpy.qos import qos_profile_system_default
+        self.cmd_sub = self.create_subscription(
+            String, 'cmd_vel', self.cmd_callback, ____)
+    
+    def sensor_callback(self, msg):
+        self.get_logger().info('Received scan with %d ranges' % len(msg.ranges))
+    
+    def state_callback(self, msg):
+        self.get_logger().info('State: %s' % msg.data)
+    
+    def cmd_callback(self, msg):
+        self.get_logger().info('Command: %s' % msg.data)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = QoSSubscriber()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Python vs C++)</h2>
+
+        <h3>Best-Effort QoS</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto qos = rclcpp::QoS(10)
+  .best_effort()
+  .durability_volatile();</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">qos = QoSProfile(
+    depth=10,
+    reliability=ReliabilityPolicy.BEST_EFFORT,
+    durability=DurabilityPolicy.VOLATILE)</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Reliable with Transient-Local</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto qos = rclcpp::QoS(1)
+  .reliable()
+  .transient_local();</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">qos = QoSProfile(
+    depth=1,
+    reliability=ReliabilityPolicy.RELIABLE,
+    durability=DurabilityPolicy.TRANSIENT_LOCAL)</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Sensor Data Profile</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto qos = rclcpp::SensorDataQoS();</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">from rclpy.qos import qos_profile_sensor_data
+qos = qos_profile_sensor_data</code></pre>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>QoS Policy Overview</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Policy</th>
+              <th>Options</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Reliability</strong></td>
+              <td>BEST_EFFORT, RELIABLE</td>
+              <td>RELIABLE for commands, BEST_EFFORT for sensors</td>
+            </tr>
+            <tr>
+              <td><strong>Durability</strong></td>
+              <td>VOLATILE, TRANSIENT_LOCAL</td>
+              <td>TRANSIENT_LOCAL for late joiners needing last value</td>
+            </tr>
+            <tr>
+              <td><strong>History</strong></td>
+              <td>KEEP_LAST(n), KEEP_ALL</td>
+              <td>KEEP_LAST(10) typical, KEEP_ALL for guaranteed processing</td>
+            </tr>
+            <tr>
+              <td><strong>Deadline</strong></td>
+              <td>Duration</td>
+              <td>Detect missing periodic messages</td>
+            </tr>
+            <tr>
+              <td><strong>Lifespan</strong></td>
+              <td>Duration</td>
+              <td>Expire old messages in queue</td>
+            </tr>
+            <tr>
+              <td><strong>Liveliness</strong></td>
+              <td>AUTOMATIC, MANUAL</td>
+              <td>Detect dead publishers</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Common QoS Profiles</h3>
+        <pre><code class="python"># Predefined profiles in rclpy.qos
+from rclpy.qos import (
+    qos_profile_sensor_data,      # Best-effort, volatile, depth 5
+    qos_profile_system_default,   # Reliable, volatile, depth 10
+    qos_profile_services_default, # Reliable, volatile, depth 10
+    qos_profile_parameters,       # Reliable, volatile, depth 1000
+    qos_profile_parameter_events  # Reliable, volatile, depth 1000
+)</code></pre>
+
+        <h3>QoS Override via YAML</h3>
+        <pre><code class="yaml">my_node:
+  ros__parameters:
+    qos_overrides:
+      /scan:
+        publisher:
+          depth: 5
+          reliability: best_effort
+          durability: volatile
+        subscription:
+          depth: 5
+          reliability: best_effort
+          durability: volatile</code></pre>
+
+        <h3>Compatibility Matrix</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Publisher</th>
+              <th>Subscriber</th>
+              <th>Compatible?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>RELIABLE</td>
+              <td>RELIABLE</td>
+              <td>✓ Yes</td>
+            </tr>
+            <tr>
+              <td>RELIABLE</td>
+              <td>BEST_EFFORT</td>
+              <td>✗ No</td>
+            </tr>
+            <tr>
+              <td>BEST_EFFORT</td>
+              <td>RELIABLE</td>
+              <td>✓ Yes (sub downgrades)</td>
+            </tr>
+            <tr>
+              <td>BEST_EFFORT</td>
+              <td>BEST_EFFORT</td>
+              <td>✓ Yes</td>
+            </tr>
+            <tr>
+              <td>TRANSIENT_LOCAL</td>
+              <td>TRANSIENT_LOCAL</td>
+              <td>✓ Yes</td>
+            </tr>
+            <tr>
+              <td>TRANSIENT_LOCAL</td>
+              <td>VOLATILE</td>
+              <td>✗ No</td>
+            </tr>
+            <tr>
+              <td>VOLATILE</td>
+              <td>TRANSIENT_LOCAL</td>
+              <td>✓ Yes (sub downgrades)</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Check QoS policies on a topic
+ros2 topic info /scan --verbose
+# Expected output shows:
+# Publisher count: 1
+#   Node name: laser_node
+#   Reliability: BEST_EFFORT
+#   Durability: VOLATILE
+#   Deadline: Infinite
+#   Lifespan: Infinite
+
+# Check for QoS mismatches
+ros2 topic info /cmd_vel --verbose
+# Look for "incompatible QoS" warnings
+
+# Echo with specific QoS
+ros2 topic echo /scan --qos-reliability best_effort --qos-durability volatile
+
+# Monitor QoS events
+ros2 topic echo /rosout
+# Shows QoS incompatibility warnings</code></pre>
+
+        <h3>Programmatic QoS Event Handling</h3>
+        <pre><code class="c++">// Set up QoS event callback for incompatible QoS
+rclcpp::PublisherOptions pub_options;
+pub_options.event_callbacks.incompatible_qos_callback =
+  [this](rclcpp::QOSOfferedIncompatibleQoSInfo &amp; info) {
+    RCLCPP_WARN(this-&gt;get_logger(),
+                "Incompatible QoS: %d incompatible connections", 
+                info.total_count);
+  };
+
+publisher_ = this-&gt;create_publisher&lt;MsgType&gt;("topic", qos, pub_options);</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Start with <code>SystemDefaultQoS</code> for development. Profile and optimize QoS only when you hit specific issues like drops, latency, or late-joiner problems.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Silent Communication Failure</h3>
+        <p><strong>Symptom:</strong> Publisher and subscriber both run, but no messages received. No error messages.</p>
+        <p><strong>Root Cause:</strong> QoS incompatibility between publisher (RELIABLE) and subscriber (BEST_EFFORT).</p>
+        <p><strong>Fix:</strong> Match QoS policies or make subscriber more permissive:</p>
+        <pre><code class="python"># Option 1: Match exactly
+pub_qos = QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE)
+sub_qos = QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE)
+
+# Option 2: Make subscriber compatible with both
+sub_qos = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
+# This subscribes to both RELIABLE and BEST_EFFORT publishers</code></pre>
+
+        <h3>Failure 2: Late Joiner Misses Initial State</h3>
+        <p><strong>Symptom:</strong> Subscriber started after publisher misses critical initialization message.</p>
+        <p><strong>Root Cause:</strong> Both use VOLATILE durability, which doesn't store messages.</p>
+        <p><strong>Fix:</strong> Use TRANSIENT_LOCAL durability on both sides:</p>
+        <pre><code class="c++">// Publisher keeps last message for late joiners
+auto qos = rclcpp::QoS(rclcpp::KeepLast(1))
+  .reliable()
+  .transient_local();
+
+auto pub = this-&gt;create_publisher&lt;std_msgs::msg::String&gt;("state", qos);
+
+// Subscriber gets last published message immediately upon subscription
+auto sub = this-&gt;create_subscription&lt;std_msgs::msg::String&gt;(
+  "state", qos, callback);</code></pre>
+
+        <h3>Failure 3: Message Queue Overflow</h3>
+        <p><strong>Symptom:</strong> Messages dropped with "queue depth exceeded" warning.</p>
+        <p><strong>Root Cause:</strong> Publisher sends faster than subscriber processes; queue depth too small.</p>
+        <p><strong>Fix:</strong> Increase depth or use KEEP_ALL history:</p>
+        <pre><code class="python"># Option 1: Larger fixed queue
+qos = QoSProfile(depth=100, history=HistoryPolicy.KEEP_LAST)
+
+# Option 2: Keep all (unbounded, use carefully)
+qos = QoSProfile(history=HistoryPolicy.KEEP_ALL)
+
+# Option 3: Add lifespan to expire old messages
+from rclpy.duration import Duration
+qos.lifespan = Duration(seconds=5)  # Discard messages older than 5s</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Detect and Recover from QoS Mismatch</h3>
+        <p>Intentionally create incompatible QoS and detect it:</p>
+
+        <pre><code class="python"># Publisher with RELIABLE
+pub_qos = QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE)
+self.publisher = self.create_publisher(String, 'test_topic', pub_qos)
+
+# Subscriber with BEST_EFFORT (incompatible)
+sub_qos = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
+
+# Add QoS event callback to detect mismatch
+from rclpy.qos import QoSProfile, QoSSubscriptionEventType
+sub_options = rclpy.subscription.SubscriptionOptions()
+sub_options.event_callbacks = [
+    (QoSSubscriptionEventType.REQUESTED_INCOMPATIBLE_QOS,
+     lambda event: self.get_logger().error(
+         f'Incompatible QoS detected! Policy: {event.last_policy_kind}'))
+]
+
+self.subscription = self.create_subscription(
+    String, 'test_topic', self.callback, sub_qos,
+    subscription_options=sub_options)</code></pre>
+
+        <p><strong>Detection:</strong> Run both nodes and check logs:</p>
+        <pre><code class="bash">ros2 run my_pkg publisher
+ros2 run my_pkg subscriber
+# Expected: Error log showing incompatible QoS detected</code></pre>
+
+        <p><strong>Recovery:</strong> Change subscriber to RELIABLE or publisher to BEST_EFFORT.</p>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Bag playback often fails due to QoS mismatches. Use <code>ros2 bag play --qos-profile-overrides-path</code> with YAML to force compatible QoS.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a QoS testing framework:</p>
+
+        <ol>
+          <li>Create publisher that cycles through different QoS profiles every 10 seconds</li>
+          <li>Create subscriber with QoS event handlers for all event types (incompatible QoS, deadline missed, liveliness lost)</li>
+          <li>Log all QoS events with timestamps</li>
+          <li>Measure message loss rate and latency for each QoS combination</li>
+          <li>Generate report showing which QoS works best for your network conditions</li>
+          <li>Test over WiFi with artificial packet loss using <code>tc</code> (traffic control)</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="pubsub.html">Publish/Subscribe</a> - Basic pub/sub with QoS examples</li>
+          <li><a href="bag.html">Bag Recording</a> - QoS compatibility in playback</li>
+          <li><a href="dds.html">DDS &amp; Discovery</a> - Underlying DDS QoS implementation</li>
+          <li><a href="slam.html">SLAM Toolbox</a> - Sensor QoS in practice</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official docs: <code>docs.ros.org/en/humble/Concepts/About-Quality-of-Service-Settings.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="launch.html" class="prev">Launch Files</a>
+        <a href="lifecycle.html" class="next">Lifecycle Nodes</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DDS &amp; Discovery - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html" class="active">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#ops">Ops &amp; Quality</a> &gt; DDS &amp; Discovery
+      </nav>
+
+      <h1 class="page-title">DDS &amp; Discovery</h1>
+      <p class="page-outcome">Master DDS middleware, discovery protocols, and multi-robot networking.</p>
+
+      <div class="pills">
+        <span class="pill pill-dds">DDS</span>
+        <span class="pill pill-network">Networking</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>DDS (Data Distribution Service) is ROS2's middleware layer. It handles discovery (nodes finding each other), serialization (message encoding), and transport (UDP/TCP). ROS2 supports multiple DDS vendors: FastDDS (default), CycloneDDS, RTI Connext. Discovery uses multicast UDP to announce nodes/topics. Domain IDs isolate groups (domain 0 separate from domain 1). QoS policies control reliability, durability, history. Security plugins enable encryption, authentication. RMW (ROS Middleware) layer abstracts DDS vendor differences. Environment variables control DDS behavior: <code>ROS_DOMAIN_ID</code>, <code>RMW_IMPLEMENTATION</code>, <code>FASTRTPS_DEFAULT_PROFILES_FILE</code>.</p>
+
+        <h3>Why</h3>
+        <p>DDS provides peer-to-peer communication - no central master like ROS1. Nodes discover each other automatically using multicast. QoS enables fine-grained control - RELIABLE for commands, BEST_EFFORT for sensor streams. DDS scales to 1000+ nodes across multiple machines. Domain IDs prevent crosstalk between robots. DDS security prevents unauthorized access. Vendor choice matters: FastDDS has broad compatibility, CycloneDDS has lower latency, RTI Connext is enterprise-grade. Understanding DDS is critical for debugging network issues (nodes not discovering, messages lost).</p>
+
+        <h3>When</h3>
+        <p>Use separate domain IDs for each robot (0-101 for single robot, 102-232 for multi-robot). Change to CycloneDDS for lower latency (real-time control). Disable multicast discovery for large networks (use Simple Discovery or Static Discovery). Use DDS security for production robots (prevent hacking). Tune shared memory transport for inter-process communication (10x faster than UDP). Monitor DDS discovery with <code>ros2 daemon stop</code> + <code>ros2 topic list</code>. Profile DDS performance with built-in tracing (identify bottlenecks).</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>DDS Implementations Comparison</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>DDS Vendor</th>
+              <th>License</th>
+              <th>Strengths</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>FastDDS</td>
+              <td>Apache 2.0</td>
+              <td>Default, broad support, XML config</td>
+              <td>General robotics, proven stability</td>
+            </tr>
+            <tr>
+              <td>CycloneDDS</td>
+              <td>EPL 2.0</td>
+              <td>Lower latency, smaller memory footprint</td>
+              <td>Real-time control, embedded systems</td>
+            </tr>
+            <tr>
+              <td>RTI Connext</td>
+              <td>Commercial</td>
+              <td>Enterprise features, support, tools</td>
+              <td>Safety-critical, large fleets</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Discovery Protocol</h3>
+        <pre><code class="bash"># Discovery happens automatically via multicast
+# 1. Node starts, sends SPDP (Simple Participant Discovery Protocol)
+#    "I am node X on domain 0"
+# 2. Other nodes receive, send their own SPDP
+# 3. Nodes exchange SEDP (Simple Endpoint Discovery Protocol)
+#    "I publish topic /cmd_vel with type geometry_msgs/Twist"
+# 4. Matching: If pub/sub QoS compatible, connection established
+
+# Multicast addresses used:
+# SPDP: 239.255.0.1:7400 + domain_id
+# SEDP: Unicast back to discovered nodes
+
+# Discovery takes 1-3 seconds
+# Use: ros2 topic list  (waits for discovery)</code></pre>
+
+        <h3>Domain ID Configuration</h3>
+        <pre><code class="bash"># Set domain ID (0-101 for single domain, 102-232 for multi-domain)
+export ROS_DOMAIN_ID=____  # 42
+
+# Verify current domain
+echo $ROS_DOMAIN_ID
+
+# Run node in specific domain
+ROS_DOMAIN_ID=5 ros2 run my_pkg my_node
+
+# Only nodes in same domain see each other
+# Domain 0: Robot A
+# Domain 1: Robot B (isolated from A)</code></pre>
+
+        <h3>Switch DDS Implementation</h3>
+        <pre><code class="bash"># Check current DDS vendor
+ros2 doctor --report | grep middleware
+
+# Install CycloneDDS
+sudo apt install ros-humble-rmw-cyclonedds-cpp
+
+# Use CycloneDDS
+export RMW_IMPLEMENTATION=____  # rmw_cyclonedds_cpp
+ros2 run my_pkg my_node
+
+# Use FastDDS (default)
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+
+# Make permanent in ~/.bashrc
+echo 'export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp' >> ~/.bashrc</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (DDS Configuration)</h2>
+
+        <h3>FastDDS XML Profile</h3>
+        <pre><code class="xml">&lt;!-- fastdds_profile.xml --&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;dds&gt;
+  &lt;profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles"&gt;
+    
+    &lt;!-- Default participant profile --&gt;
+    &lt;participant profile_name="default_participant" is_default_profile="true"&gt;
+      
+      &lt;!-- Domain ID --&gt;
+      &lt;domainId&gt;0&lt;/domainId&gt;
+      
+      &lt;!-- Discovery config --&gt;
+      &lt;rtps&gt;
+        &lt;builtin&gt;
+          &lt;discovery_config&gt;
+            
+            &lt;!-- Simple discovery (default) --&gt;
+            &lt;discoveryProtocol&gt;SIMPLE&lt;/discoveryProtocol&gt;
+            
+            &lt;!-- Increase discovery retries for WiFi --&gt;
+            &lt;leaseDuration&gt;
+              &lt;sec&gt;____&lt;/sec&gt;  &lt;!-- 10 seconds --&gt;
+            &lt;/leaseDuration&gt;
+            
+            &lt;!-- Multicast locators --&gt;
+            &lt;metatrafficMulticastLocatorList&gt;
+              &lt;locator&gt;
+                &lt;udpv4&gt;
+                  &lt;address&gt;239.255.0.1&lt;/address&gt;
+                  &lt;port&gt;7400&lt;/port&gt;
+                &lt;/udpv4&gt;
+              &lt;/locator&gt;
+            &lt;/metatrafficMulticastLocatorList&gt;
+            
+          &lt;/discovery_config&gt;
+        &lt;/builtin&gt;
+        
+        &lt;!-- Use shared memory for local communication --&gt;
+        &lt;useBuiltinTransports&gt;false&lt;/useBuiltinTransports&gt;
+        &lt;userTransports&gt;
+          &lt;transport_id&gt;shm_transport&lt;/transport_id&gt;
+          &lt;transport_id&gt;udp_transport&lt;/transport_id&gt;
+        &lt;/userTransports&gt;
+        
+      &lt;/rtps&gt;
+    &lt;/participant&gt;
+    
+    &lt;!-- Shared memory transport (10x faster for local nodes) --&gt;
+    &lt;transport_descriptors&gt;
+      &lt;transport_descriptor&gt;
+        &lt;transport_id&gt;shm_transport&lt;/transport_id&gt;
+        &lt;type&gt;SHM&lt;/type&gt;
+      &lt;/transport_descriptor&gt;
+      
+      &lt;transport_descriptor&gt;
+        &lt;transport_id&gt;udp_transport&lt;/transport_id&gt;
+        &lt;type&gt;UDPv4&lt;/type&gt;
+      &lt;/transport_descriptor&gt;
+    &lt;/transport_descriptors&gt;
+    
+  &lt;/profiles&gt;
+&lt;/dds&gt;</code></pre>
+
+        <pre><code class="bash"># Use profile
+export FASTRTPS_DEFAULT_PROFILES_FILE=/path/to/fastdds_profile.xml
+ros2 run my_pkg my_node</code></pre>
+
+        <h3>CycloneDDS Configuration</h3>
+        <pre><code class="xml">&lt;!-- cyclonedds.xml --&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;CycloneDDS&gt;
+  &lt;Domain&gt;
+    &lt;Id&gt;0&lt;/Id&gt;
+    
+    &lt;Discovery&gt;
+      &lt;!-- Multicast discovery --&gt;
+      &lt;EnableMulticast&gt;true&lt;/EnableMulticast&gt;
+      
+      &lt;!-- Discovery peers (for static discovery) --&gt;
+      &lt;Peers&gt;
+        &lt;Peer address="192.168.1.10"/&gt;
+        &lt;Peer address="____"/&gt;  &lt;!-- 192.168.1.11 (add peers manually) --&gt;
+      &lt;/Peers&gt;
+    &lt;/Discovery&gt;
+    
+    &lt;Tracing&gt;
+      &lt;!-- Enable DDS tracing for debugging --&gt;
+      &lt;Verbosity&gt;info&lt;/Verbosity&gt;  &lt;!-- none, severe, error, warning, info, config, fine, finer, finest --&gt;
+      &lt;OutputFile&gt;cyclonedds.log&lt;/OutputFile&gt;
+    &lt;/Tracing&gt;
+    
+  &lt;/Domain&gt;
+&lt;/CycloneDDS&gt;</code></pre>
+
+        <pre><code class="bash"># Use CycloneDDS config
+export CYCLONEDDS_URI=file:///path/to/cyclonedds.xml
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+ros2 run my_pkg my_node</code></pre>
+
+        <h3>Static Discovery (No Multicast)</h3>
+        <p>For networks where multicast is disabled/unreliable:</p>
+        <pre><code class="xml">&lt;!-- fastdds_static.xml --&gt;
+&lt;discoveryProtocol&gt;____&lt;/discoveryProtocol&gt;  &lt;!-- SIMPLE or SERVER (new in Humble) --&gt;
+
+&lt;!-- Discovery Server mode (scalable for 100+ nodes) --&gt;
+&lt;discoveryServersList&gt;
+  &lt;RemoteServer prefix="44.53.00.5f.45.50.52.4f.53.49.4d.41"&gt;
+    &lt;metatrafficUnicastLocatorList&gt;
+      &lt;locator&gt;
+        &lt;udpv4&gt;
+          &lt;address&gt;192.168.1.100&lt;/address&gt;  &lt;!-- Server IP --&gt;
+          &lt;port&gt;11811&lt;/port&gt;
+        &lt;/udpv4&gt;
+      &lt;/locator&gt;
+    &lt;/metatrafficUnicastLocatorList&gt;
+  &lt;/RemoteServer&gt;
+&lt;/discoveryServersList&gt;</code></pre>
+
+        <pre><code class="bash"># Launch discovery server
+fastdds discovery -i 0 -l 192.168.1.100 -p 11811
+
+# Clients connect to server (no multicast needed)
+export ROS_DISCOVERY_SERVER="192.168.1.100:11811"
+ros2 run my_pkg my_node</code></pre>
+
+        <h3>DDS Security (Encryption &amp; Auth)</h3>
+        <pre><code class="bash"># Generate security files
+ros2 security create_keystore demo_keys
+ros2 security create_enclave demo_keys /my_robot/my_node
+
+# Creates:
+# demo_keys/enclaves/my_robot/my_node/
+#   identity_ca.cert.pem       # CA certificate
+#   cert.pem                   # Node certificate
+#   key.pem                    # Private key
+#   permissions_ca.cert.pem    # Permissions CA
+#   governance.p7s             # Governance rules
+#   permissions.p7s            # Node permissions
+
+# Enable security
+export ROS_SECURITY_KEYSTORE=/path/to/demo_keys
+export ROS_SECURITY_ENABLE=true
+export ROS_SECURITY_STRATEGY=____  # Enforce (or Permissive for testing)
+
+ros2 run my_pkg my_node</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Key Environment Variables</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Purpose</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>ROS_DOMAIN_ID</code></td>
+              <td>Isolate robots</td>
+              <td><code>0</code> (default), <code>42</code></td>
+            </tr>
+            <tr>
+              <td><code>RMW_IMPLEMENTATION</code></td>
+              <td>Choose DDS vendor</td>
+              <td><code>rmw_cyclonedds_cpp</code></td>
+            </tr>
+            <tr>
+              <td><code>FASTRTPS_DEFAULT_PROFILES_FILE</code></td>
+              <td>FastDDS config</td>
+              <td><code>/path/to/profile.xml</code></td>
+            </tr>
+            <tr>
+              <td><code>CYCLONEDDS_URI</code></td>
+              <td>CycloneDDS config</td>
+              <td><code>file:///path/to/cyclonedds.xml</code></td>
+            </tr>
+            <tr>
+              <td><code>ROS_LOCALHOST_ONLY</code></td>
+              <td>Disable network (loopback only)</td>
+              <td><code>1</code></td>
+            </tr>
+            <tr>
+              <td><code>ROS_DISCOVERY_SERVER</code></td>
+              <td>Discovery server address</td>
+              <td><code>192.168.1.100:11811</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Discovery Timing</h3>
+        <pre><code class="bash"># Discovery can take 1-3 seconds
+# If nodes don't see each other, wait longer
+
+# Check discovery status
+ros2 node list  # Waits up to 5s for discovery
+
+# Force immediate discovery
+ros2 daemon stop    # Kill daemon
+ros2 daemon start   # Restart (clears cache)
+ros2 node list      # Fresh discovery</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>DDS Health Checks</h3>
+        <pre><code class="bash"># Check DDS vendor
+ros2 doctor --report | grep middleware
+# Expected: rmw_fastrtps_cpp or rmw_cyclonedds_cpp
+
+# List discovered nodes
+ros2 node list
+# Should see all nodes in same domain
+
+# Check topic discovery
+ros2 topic list
+# Should see all topics
+
+# Monitor discovery traffic
+sudo tcpdump -i any port 7400  # SPDP multicast
+# Should see periodic discovery packets
+
+# Check shared memory
+ls /dev/shm/  | grep fastrtps
+# Should see shared memory segments if FastDDS SHM enabled</code></pre>
+
+        <h3>Multi-Machine Discovery Test</h3>
+        <pre><code class="bash"># Machine A
+export ROS_DOMAIN_ID=10
+ros2 run demo_nodes_cpp talker
+
+# Machine B (same network)
+export ROS_DOMAIN_ID=____  # 10 (same domain)
+ros2 run demo_nodes_cpp listener
+
+# Should receive messages
+# If not:
+# 1. Check firewall (allow UDP 7400-7500)
+# 2. Check multicast routing (ping 239.255.0.1)
+# 3. Check network interface (ifconfig)</code></pre>
+
+        <h3>Domain Isolation Test</h3>
+        <pre><code class="bash"># Terminal 1
+export ROS_DOMAIN_ID=0
+ros2 topic pub /test std_msgs/String "data: 'Domain 0'"
+
+# Terminal 2 (same domain)
+export ROS_DOMAIN_ID=0
+ros2 topic echo /test
+# Should receive "Domain 0"
+
+# Terminal 3 (different domain)
+export ROS_DOMAIN_ID=1
+ros2 topic echo /test
+# Should NOT receive (isolated)</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use <code>ros2 doctor --report</code> for comprehensive DDS health check. It reports middleware, domain ID, network interfaces, and common issues.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Nodes Don't Discover Each Other</h3>
+        <p><strong>Symptom:</strong> <code>ros2 node list</code> doesn't show remote nodes.</p>
+        <p><strong>Root Cause:</strong> Firewall blocking multicast, wrong domain ID, or network isolation.</p>
+        <p><strong>Fix:</strong> Check connectivity and firewall:</p>
+        <pre><code class="bash"># Check domain ID matches
+echo $ROS_DOMAIN_ID  # Both machines must match
+
+# Test multicast connectivity
+# Machine A
+ping -I eth0 239.255.0.1
+
+# Machine B (should receive pings)
+# If not, multicast routing broken
+
+# Check firewall (Ubuntu)
+sudo ufw allow 7400:7500/udp  # Allow DDS discovery
+
+# Or disable temporarily for testing
+sudo ufw disable
+
+# Verify discovery
+ros2 daemon stop
+ros2 node list</code></pre>
+
+        <h3>Failure 2: High Latency / Packet Loss</h3>
+        <p><strong>Symptom:</strong> Messages delayed or dropped, <code>ros2 topic hz</code> shows irregular rate.</p>
+        <p><strong>Root Cause:</strong> WiFi congestion, QoS mismatch, or insufficient bandwidth.</p>
+        <p><strong>Fix:</strong> Tune QoS and transport:</p>
+        <pre><code class="bash"># Switch to CycloneDDS (lower latency)
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+
+# For local nodes, use shared memory (10x faster)
+# Add to FastDDS XML:
+&lt;useBuiltinTransports&gt;false&lt;/useBuiltinTransports&gt;
+&lt;userTransports&gt;
+  &lt;transport_id&gt;____&lt;/transport_id&gt;  # shm_transport
+&lt;/userTransports&gt;
+
+# Monitor topic rate
+ros2 topic hz /scan
+# Should be stable (e.g., 10.0 Hz ± 0.1)</code></pre>
+
+        <h3>Failure 3: "Failed to Create Node" Error</h3>
+        <p><strong>Symptom:</strong> Node crashes with "failed to create node" or "failed to initialize middleware".</p>
+        <p><strong>Root Cause:</strong> DDS implementation mismatch or missing shared memory.</p>
+        <p><strong>Fix:</strong> Reset DDS state:</p>
+        <pre><code class="bash"># Clear shared memory segments
+rm -rf /dev/shm/fastrtps_*
+rm -rf /dev/shm/sem.fastrtps_*
+
+# Check RMW matches installed packages
+ros2 doctor --report | grep rmw
+# If rmw_cyclonedds_cpp but package not installed:
+sudo apt install ros-humble-____  # rmw-cyclonedds-cpp
+
+# Restart daemon
+ros2 daemon stop
+ros2 daemon start</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Domain ID Mismatch</h3>
+        <p>Create publisher and subscriber in different domains:</p>
+
+        <pre><code class="bash"># Terminal 1 - Publisher (domain 0)
+export ROS_DOMAIN_ID=____  # 0
+ros2 run demo_nodes_cpp talker
+
+# Terminal 2 - Subscriber (domain 5) - intentional error
+export ROS_DOMAIN_ID=5
+ros2 run demo_nodes_cpp listener</code></pre>
+
+        <p><strong>Observe:</strong></p>
+        <ul>
+          <li>Publisher sends "Hello World: X"</li>
+          <li>Subscriber receives nothing (different domain)</li>
+          <li><code>ros2 node list</code> in domain 5 doesn't show talker</li>
+          <li>No error messages - silent failure!</li>
+        </ul>
+
+        <p><strong>Detection:</strong></p>
+        <pre><code class="bash"># Check domains
+# Terminal 1
+echo $ROS_DOMAIN_ID  # 0
+
+# Terminal 2
+echo $ROS_DOMAIN_ID  # 5 (mismatch!)
+
+# Verify isolation
+ROS_DOMAIN_ID=0 ros2 topic list | grep chatter  # Found
+ROS_DOMAIN_ID=5 ros2 topic list | grep chatter  # Not found</code></pre>
+
+        <p><strong>Recovery:</strong></p>
+        <pre><code class="bash"># Fix domain ID
+export ROS_DOMAIN_ID=____  # 0 (match publisher)
+ros2 run demo_nodes_cpp listener
+# Now receives messages!</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Domain ID mismatch is silent - no error, just no communication. Always verify <code>ROS_DOMAIN_ID</code> matches across all terminals/machines. Add to <code>~/.bashrc</code> to make consistent.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Master advanced DDS networking:</p>
+
+        <ol>
+          <li>Configure multi-robot system with separate domains per robot + shared global domain</li>
+          <li>Implement DDS security for production fleet (certificate rotation, revocation)</li>
+          <li>Build custom DDS transport plugin (radio, LTE, satellite link)</li>
+          <li>Optimize DDS for high-bandwidth sensors (4K camera, 3D lidar) with flow control</li>
+          <li>Create DDS monitoring dashboard (discovery events, bandwidth per topic, QoS violations)</li>
+          <li>Implement dynamic QoS adaptation based on network conditions</li>
+          <li>Build multi-region cloud bridge (AWS IoT Core, DDS gateway, hybrid cloud-edge)</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="../index.html">Home</a> - Return to training roadmap</li>
+          <li><a href="qos.html">QoS Policies</a> - Deep dive into DDS quality of service</li>
+          <li><a href="launch.html">Launch Files</a> - Set RMW in launch configurations</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>DDS specification: <code>omg.org/spec/DDS</code></p>
+          <p>ROS2 DDS docs: <code>docs.ros.org/en/humble/Concepts/About-Different-Middleware-Vendors.html</code></p>
+          <p>FastDDS docs: <code>fast-dds.docs.eprosima.com</code></p>
+          <p>CycloneDDS docs: <code>github.com/eclipse-cyclonedds/cyclonedds</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="diagnostics.html" class="prev">Diagnostics</a>
+        <a href="../index.html" class="next">Home</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parameters - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html" class="active">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#core">Core ROS2</a> &gt; Parameters
+      </nav>
+
+      <h1 class="page-title">Parameters</h1>
+      <p class="page-outcome">Configure nodes dynamically without recompilation.</p>
+
+      <div class="pills">
+        <span class="pill pill-cpu">CPU-Light</span>
+        <span class="pill pill-required">Required</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Parameters are runtime configuration values for nodes. Each parameter has a name, type, and value. Nodes declare parameters with defaults and validation constraints. ROS2 provides CLI and service interfaces to get/set parameters at runtime. Parameters can be loaded from YAML files or set via launch files.</p>
+
+        <h3>Why</h3>
+        <p>Hard-coding configuration requires recompilation for every tuning change. Parameters enable experimentation without rebuilding. They support environment-specific configs (sim vs hardware), A/B testing, and dynamic reconfigure for PID gains, thresholds, and behavior modes. Parameters are essential for production deployments across different robots.</p>
+
+        <h3>When</h3>
+        <p>Use parameters for any configurable value: gains, thresholds, timeouts, file paths, topic names. Declare parameters at node initialization with type constraints and ranges. For values that never change (constants), use class members instead. For calibration data, load from YAML. For runtime tuning, use parameter callbacks to react to changes.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>C++ Micro-Task</h3>
+        <p>Declare and use parameters with validation:</p>
+        <pre><code class="c++">#include "rclcpp/rclcpp.hpp"
+
+class ParameterNode : public rclcpp::Node {
+public:
+  ParameterNode() : Node("parameter_node") {
+    // Declare parameter with default value
+    this-&gt;declare_parameter("max_speed", ____);
+    this-&gt;declare_parameter("robot_name", ____);
+    
+    // Declare with range constraint
+    auto descriptor = rcl_interfaces::msg::ParameterDescriptor();
+    descriptor.description = "Sensor update rate in Hz";
+    descriptor.integer_range.resize(1);
+    descriptor.integer_range[0].from_value = 1;
+    descriptor.integer_range[0].to_value = 100;
+    this-&gt;declare_parameter("update_rate", 10, ____);
+    
+    // Get parameter values
+    max_speed_ = this-&gt;get_parameter("____").as_double();
+    robot_name_ = this-&gt;get_parameter("____").as_string();
+    
+    RCLCPP_INFO(this-&gt;get_logger(), "Max speed: %.2f, Robot: %s",
+                max_speed_, robot_name_.c_str());
+    
+    // Set callback for dynamic changes
+    param_callback_ = this-&gt;add_on_set_parameters_callback(
+      std::bind(&amp;ParameterNode::parameters_callback, this, std::placeholders::_1));
+  }
+
+private:
+  rcl_interfaces::msg::SetParametersResult parameters_callback(
+    const std::vector&lt;rclcpp::Parameter&gt;&amp; parameters) {
+    auto result = rcl_interfaces::msg::SetParametersResult();
+    result.successful = true;
+    
+    for (const auto&amp; param : parameters) {
+      if (param.get_name() == "max_speed") {
+        if (param.as_double() &lt; 0.0 || param.as_double() &gt; 10.0) {
+          result.successful = false;
+          result.reason = "max_speed must be between 0 and 10";
+          return result;
+        }
+        max_speed_ = param.as_double();
+        RCLCPP_INFO(this-&gt;get_logger(), "Updated max_speed to %.2f", max_speed_);
+      }
+    }
+    return result;
+  }
+
+  double max_speed_;
+  std::string robot_name_;
+  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr param_callback_;
+};
+
+int main(int argc, char **argv) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared&lt;ParameterNode&gt;());
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+
+        <h3>Python Micro-Task</h3>
+        <p>Load parameters from YAML and react to changes:</p>
+        <pre><code class="python">import rclpy
+from rclpy.node import Node
+from rcl_interfaces.msg import ParameterDescriptor, SetParametersResult
+
+class ParameterNode(Node):
+    def __init__(self):
+        super().__init__('parameter_node')
+        
+        # Declare with descriptor
+        descriptor = ParameterDescriptor(
+            description='Maximum linear velocity',
+            read_only=False)
+        self.declare_parameter('max_speed', ____, ____)
+        self.declare_parameter('robot_name', ____)
+        
+        # Get values
+        self.max_speed = self.get_parameter('____').value
+        self.robot_name = self.get_parameter('____').value
+        
+        self.get_logger().info(f'Max speed: {self.max_speed}, Robot: {self.robot_name}')
+        
+        # Add callback
+        self.add_on_set_parameters_callback(self.parameter_callback)
+    
+    def parameter_callback(self, params):
+        result = SetParametersResult()
+        result.successful = True
+        
+        for param in params:
+            if param.name == 'max_speed':
+                if param.value &lt; 0.0 or param.value &gt; 10.0:
+                    result.successful = False
+                    result.reason = 'max_speed must be 0-10'
+                    return result
+                self.max_speed = param.value
+                self.get_logger().info(f'Updated max_speed: {self.max_speed}')
+        
+        return result
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = ParameterNode()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Python vs C++)</h2>
+
+        <h3>Declare Parameter</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">this-&gt;declare_parameter("name", 42);</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">self.declare_parameter('name', 42)</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Get Parameter</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">int val = this-&gt;get_parameter("name").as_int();</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">val = self.get_parameter('name').value</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Set Parameter Callback</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto cb = this-&gt;add_on_set_parameters_callback(
+  std::bind(&amp;Node::param_cb, this, _1));</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">self.add_on_set_parameters_callback(
+    self.parameter_callback)</code></pre>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>YAML Parameter File</h3>
+        <pre><code class="yaml"># config/robot_params.yaml
+parameter_node:
+  ros__parameters:
+    max_speed: 2.5
+    robot_name: "turtlebot3"
+    update_rate: 20
+    debug_mode: false
+    sensor_topics:
+      - "/scan"
+      - "/camera/image"
+    pid_gains:
+      kp: 1.0
+      ki: 0.1
+      kd: 0.05</code></pre>
+
+        <h3>Load from Launch File</h3>
+        <pre><code class="python">from launch import LaunchDescription
+from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+import os
+
+def generate_launch_description():
+    config = os.path.join(
+        get_package_share_directory('my_pkg'),
+        'config',
+        'robot_params.yaml'
+    )
+    
+    return LaunchDescription([
+        Node(
+            package='my_pkg',
+            executable='parameter_node',
+            name='parameter_node',
+            parameters=[config]
+        )
+    ])</code></pre>
+
+        <h3>Inline Parameter Override</h3>
+        <pre><code class="python">Node(
+    package='my_pkg',
+    executable='parameter_node',
+    parameters=[
+        {'max_speed': 3.0},
+        {'robot_name': 'custom_bot'}
+    ]
+)</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Terminal 1: Run node
+ros2 run my_pkg parameter_node
+
+# Terminal 2: List all parameters
+ros2 param list
+# Expected: /parameter_node max_speed, robot_name, update_rate, ...
+
+# Get specific parameter
+ros2 param get /parameter_node max_speed
+# Expected: Double value: 2.5
+
+# Set parameter at runtime
+ros2 param set /parameter_node max_speed 3.5
+# Expected: Set parameter successful (or rejection message if validation fails)
+
+# Dump all parameters to file
+ros2 param dump /parameter_node --output-dir ./config
+# Creates yaml file with current values
+
+# Load parameters from file
+ros2 param load /parameter_node ./config/parameter_node.yaml</code></pre>
+
+        <h3>Describe Parameter</h3>
+        <pre><code class="bash">ros2 param describe /parameter_node update_rate
+# Shows type, range, description, constraints</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use <code>ros2 param dump</code> to capture working configurations, then commit YAML files to version control for reproducibility.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Undeclared Parameter Access</h3>
+        <p><strong>Symptom:</strong> <code>ParameterNotDeclaredException</code> when calling <code>get_parameter</code>.</p>
+        <p><strong>Root Cause:</strong> Trying to access parameter before declaring it or typo in parameter name.</p>
+        <p><strong>Fix:</strong> Always declare before accessing:</p>
+        <pre><code class="python"># Wrong - will throw exception
+val = self.get_parameter('speed').value  # Not declared yet
+
+# Correct - declare first
+self.declare_parameter('speed', 1.0)
+val = self.get_parameter('speed').value</code></pre>
+
+        <h3>Failure 2: Type Mismatch</h3>
+        <p><strong>Symptom:</strong> Runtime error when calling <code>as_int()</code> on double parameter.</p>
+        <p><strong>Root Cause:</strong> Parameter type doesn't match accessor method.</p>
+        <p><strong>Fix:</strong> Use correct type accessor or check type first:</p>
+        <pre><code class="c++">// Check type before accessing
+auto param = this-&gt;get_parameter("value");
+if (param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER) {
+  int val = param.as_int();
+} else {
+  RCLCPP_ERROR(this-&gt;get_logger(), "Expected integer parameter");
+}</code></pre>
+
+        <h3>Failure 3: Validation Ignored</h3>
+        <p><strong>Symptom:</strong> Invalid parameter values accepted, causing runtime errors.</p>
+        <p><strong>Root Cause:</strong> No parameter callback to validate changes.</p>
+        <p><strong>Fix:</strong> Always add validation callback:</p>
+        <pre><code class="c++">rcl_interfaces::msg::SetParametersResult callback(
+  const std::vector&lt;rclcpp::Parameter&gt;&amp; params) {
+  auto result = rcl_interfaces::msg::SetParametersResult();
+  result.successful = true;
+  
+  for (const auto&amp; p : params) {
+    if (p.get_name() == "critical_param") {
+      if (!validate(p.get_value())) {
+        result.successful = false;
+        result.reason = "Validation failed: out of range";
+        return result;
+      }
+    }
+  }
+  return result;
+}</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Range Validation</h3>
+        <p>Create node with strict parameter constraints:</p>
+
+        <pre><code class="python">def parameter_callback(self, params):
+    result = SetParametersResult()
+    result.successful = True
+    
+    for param in params:
+        if param.name == 'speed':
+            if not (0.1 &lt;= param.value &lt;= 5.0):
+                result.successful = False
+                result.reason = f'Speed {param.value} out of range [0.1, 5.0]'
+                self.get_logger().error(result.reason)
+                return result
+    
+    return result</code></pre>
+
+        <p><strong>Detection:</strong> Attempt invalid set:</p>
+        <pre><code class="bash">ros2 param set /node speed 10.0
+# Expected: Setting parameter failed: Speed 10.0 out of range [0.1, 5.0]</code></pre>
+
+        <p><strong>Recovery:</strong> Provide clear error messages and valid range in rejection reason.</p>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Read-only parameters can't be changed after node starts. Use for immutable configs like robot ID or sensor calibration loaded at startup.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a PID controller with dynamic tuning:</p>
+
+        <ol>
+          <li>Declare <code>kp</code>, <code>ki</code>, <code>kd</code> parameters with defaults</li>
+          <li>Add parameter callback that recomputes controller gains when any PID parameter changes</li>
+          <li>Create YAML profiles for different scenarios (aggressive, conservative, balanced)</li>
+          <li>Build launch file that selects profile based on launch argument</li>
+          <li>Live-tune gains via CLI while controller runs and observe behavior changes</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="launch.html">Launch Files</a> - Load parameter YAML at startup</li>
+          <li><a href="services.html">Services</a> - Parameters use services internally</li>
+          <li><a href="lifecycle.html">Lifecycle Nodes</a> - Load parameters in configure state</li>
+          <li><a href="diagnostics.html">Diagnostics</a> - Monitor parameter changes</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official docs: <code>docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Using-Parameters-In-A-Class-CPP.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="actions.html" class="prev">Actions</a>
+        <a href="launch.html" class="next">Launch Files</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

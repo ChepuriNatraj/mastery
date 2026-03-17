@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lifecycle Nodes - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html" class="active">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#core">Core ROS2</a> &gt; Lifecycle Nodes
+      </nav>
+
+      <h1 class="page-title">Lifecycle Nodes</h1>
+      <p class="page-outcome">Manage node states for safe startup and shutdown.</p>
+
+      <div class="pills">
+        <span class="pill pill-cpu">CPU-Light</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>Lifecycle nodes implement a state machine with primary states: Unconfigured, Inactive, Active, and Finalized. Transitions between states are triggered externally via services. Each transition has callbacks (on_configure, on_activate, on_deactivate, on_cleanup, on_shutdown) for resource management. Lifecycle nodes enable coordinated system startup and graceful shutdown.</p>
+
+        <h3>Why</h3>
+        <p>Regular nodes start immediately and run until killed. This causes race conditions where nodes expect resources not yet available. Lifecycle nodes separate initialization (configure) from execution (activate). They enable safe reconfiguration without restart and coordinated multi-node shutdown. Nav2 uses lifecycle nodes extensively for controlled navigation stack management.</p>
+
+        <h3>When</h3>
+        <p>Use lifecycle nodes for hardware drivers that need initialization sequences, components requiring ordered startup, and nodes that must clean up resources before exit. Avoid lifecycle for simple stateless nodes. The lifecycle overhead is worthwhile when you need to reload configuration, swap algorithms, or ensure resource cleanup. Most Nav2 and hardware interface nodes use lifecycle.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>C++ Micro-Task</h3>
+        <p>Create a lifecycle node with state callbacks:</p>
+        <pre><code class="c++">#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "lifecycle_msgs/msg/transition.hpp"
+
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
+class LifecycleDemo : public rclcpp_lifecycle::LifecycleNode {
+public:
+  LifecycleDemo() : LifecycleNode("lifecycle_demo") {
+    RCLCPP_INFO(this-&gt;get_logger(), "Lifecycle node created");
+  }
+
+  CallbackReturn on_configure(const rclcpp_lifecycle::State&amp; previous_state) {
+    RCLCPP_INFO(this-&gt;get_logger(), "Configuring from %s", previous_state.label().c_str());
+    
+    // Load parameters, initialize resources
+    this-&gt;declare_parameter("update_rate", ____);
+    update_rate_ = this-&gt;get_parameter("____").as_int();
+    
+    // Create publishers (not active yet)
+    pub_ = this-&gt;create_publisher&lt;std_msgs::msg::String&gt;("output", 10);
+    
+    // Return SUCCESS or FAILURE
+    return CallbackReturn::____;
+  }
+
+  CallbackReturn on_activate(const rclcpp_lifecycle::State&amp; previous_state) {
+    RCLCPP_INFO(this-&gt;get_logger(), "Activating from %s", previous_state.label().c_str());
+    
+    // Activate publishers and start timers
+    LifecycleNode::on_activate(previous_state);
+    
+    timer_ = this-&gt;create_wall_timer(
+      std::chrono::seconds(1),
+      std::bind(&amp;LifecycleDemo::timer_callback, this));
+    
+    return CallbackReturn::SUCCESS;
+  }
+
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State&amp; previous_state) {
+    RCLCPP_INFO(this-&gt;get_logger(), "Deactivating from %s", previous_state.label().c_str());
+    
+    // Stop publishing, cancel timers
+    LifecycleNode::on_deactivate(previous_state);
+    timer_-&gt;cancel();
+    
+    return CallbackReturn::SUCCESS;
+  }
+
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State&amp; previous_state) {
+    RCLCPP_INFO(this-&gt;get_logger(), "Cleaning up from %s", previous_state.label().c_str());
+    
+    // Release resources
+    timer_.reset();
+    pub_.reset();
+    
+    return CallbackReturn::SUCCESS;
+  }
+
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State&amp; previous_state) {
+    RCLCPP_INFO(this-&gt;get_logger(), "Shutting down from %s", previous_state.label().c_str());
+    
+    // Emergency cleanup
+    timer_.reset();
+    pub_.reset();
+    
+    return CallbackReturn::SUCCESS;
+  }
+
+private:
+  void timer_callback() {
+    if (this-&gt;get_current_state().id() == 
+        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+      auto msg = std_msgs::msg::String();
+      msg.data = "Active: " + std::to_string(count_++);
+      pub_-&gt;publish(msg);
+      RCLCPP_INFO(this-&gt;get_logger(), "Publishing: %s", msg.data.c_str());
+    }
+  }
+
+  std::shared_ptr&lt;rclcpp_lifecycle::LifecyclePublisher&lt;std_msgs::msg::String&gt;&gt; pub_;
+  rclcpp::TimerBase::SharedPtr timer_;
+  int update_rate_;
+  int count_ = 0;
+};
+
+int main(int argc, char **argv) {
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared&lt;LifecycleDemo&gt;();
+  rclcpp::spin(node-&gt;get_node_base_interface());
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+
+        <h3>Python Micro-Task</h3>
+        <p>Create matching lifecycle manager to control transitions:</p>
+        <pre><code class="python">import rclpy
+from rclpy.node import Node
+from lifecycle_msgs.srv import ChangeState, GetState
+from lifecycle_msgs.msg import Transition
+
+class LifecycleManager(Node):
+    def __init__(self):
+        super().__init__('lifecycle_manager')
+        
+        # Create service clients for target node
+        self.change_state_client = self.create_client(
+            ChangeState,
+            '/lifecycle_demo/____')  # change_state
+        
+        self.get_state_client = self.create_client(
+            GetState,
+            '/lifecycle_demo/get_state')
+        
+        while not self.change_state_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting for lifecycle services...')
+    
+    def get_state(self):
+        request = GetState.Request()
+        future = self.get_state_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        return future.result()
+    
+    def change_state(self, transition_id):
+        request = ChangeState.Request()
+        request.transition.id = ____
+        
+        future = self.change_state_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        
+        result = future.result()
+        if result.success:
+            self.get_logger().info(f'Transition successful')
+        else:
+            self.get_logger().error(f'Transition failed')
+        return result.success
+    
+    def configure(self):
+        return self.change_state(Transition.____)  # TRANSITION_CONFIGURE
+    
+    def activate(self):
+        return self.change_state(Transition.TRANSITION_ACTIVATE)
+    
+    def deactivate(self):
+        return self.change_state(Transition.TRANSITION_DEACTIVATE)
+    
+    def cleanup(self):
+        return self.change_state(Transition.TRANSITION_CLEANUP)
+    
+    def shutdown(self):
+        return self.change_state(Transition.TRANSITION_UNCONFIGURED_SHUTDOWN)
+
+def main(args=None):
+    rclpy.init(args=args)
+    manager = LifecycleManager()
+    
+    # Orchestrate lifecycle transitions
+    manager.get_logger().info('Configuring node...')
+    manager.configure()
+    
+    import time
+    time.sleep(1)
+    
+    manager.get_logger().info('Activating node...')
+    manager.activate()
+    
+    time.sleep(5)
+    
+    manager.get_logger().info('Deactivating node...')
+    manager.deactivate()
+    
+    manager.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Python vs C++)</h2>
+
+        <h3>Lifecycle State Machine</h3>
+        <pre><code>                     ┌──────────────┐
+                     │ Unconfigured │ (initial state)
+                     └──────┬───────┘
+                            │ configure()
+                            ▼
+                     ┌──────────────┐
+                     │   Inactive   │ (configured but not running)
+                     └──┬───────┬───┘
+               activate()│       │ cleanup()
+                         ▼       ▼
+                  ┌──────────────┐  ┌──────────────┐
+                  │    Active    │  │ Unconfigured │
+                  └──────┬───────┘  └──────────────┘
+                         │ deactivate()
+                         ▼
+                  ┌──────────────┐
+                  │   Inactive   │
+                  └──────┬───────┘
+                         │ shutdown()
+                         ▼
+                  ┌──────────────┐
+                  │  Finalized   │ (terminal state)
+                  └──────────────┘</code></pre>
+
+        <h3>State Transition IDs</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Transition</th>
+              <th>From State</th>
+              <th>To State</th>
+              <th>ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>configure</td>
+              <td>Unconfigured</td>
+              <td>Inactive</td>
+              <td>1</td>
+            </tr>
+            <tr>
+              <td>cleanup</td>
+              <td>Inactive</td>
+              <td>Unconfigured</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>activate</td>
+              <td>Inactive</td>
+              <td>Active</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>deactivate</td>
+              <td>Active</td>
+              <td>Inactive</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>shutdown (unconfigured)</td>
+              <td>Unconfigured</td>
+              <td>Finalized</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>shutdown (inactive)</td>
+              <td>Inactive</td>
+              <td>Finalized</td>
+              <td>6</td>
+            </tr>
+            <tr>
+              <td>shutdown (active)</td>
+              <td>Active</td>
+              <td>Finalized</td>
+              <td>7</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Callback Return Values</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">CallbackReturn::SUCCESS
+CallbackReturn::FAILURE
+CallbackReturn::ERROR</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">from rclpy.lifecycle import TransitionCallbackReturn
+TransitionCallbackReturn.SUCCESS
+TransitionCallbackReturn.FAILURE
+TransitionCallbackReturn.ERROR</code></pre>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Launch Lifecycle Node with Manager</h3>
+        <pre><code class="python">from launch import LaunchDescription
+from launch_ros.actions import Node, LifecycleNode
+from launch.actions import RegisterEventHandler
+from launch_ros.event_handlers import OnStateTransition
+from launch_ros.events.lifecycle import ChangeState
+from lifecycle_msgs.msg import Transition
+
+def generate_launch_description():
+    # Launch lifecycle node
+    lifecycle_node = LifecycleNode(
+        package='my_pkg',
+        executable='lifecycle_demo',
+        name='lifecycle_demo',
+        namespace='',
+        output='screen'
+    )
+    
+    # Automatically configure on startup
+    configure_event = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=lifecycle_node,
+            goal_state='inactive',
+            entities=[
+                # Trigger activation after configuration
+                ChangeState(
+                    lifecycle_node_name='lifecycle_demo',
+                    transition_id=Transition.TRANSITION_ACTIVATE
+                )
+            ]
+        )
+    )
+    
+    # Initial configuration trigger
+    initial_configure = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=lifecycle_node,
+            start_state='configuring',
+            goal_state='inactive',
+            entities=[
+                # Log transition
+            ]
+        )
+    )
+    
+    return LaunchDescription([
+        lifecycle_node,
+        configure_event,
+        # Trigger initial configure
+        ChangeState(
+            lifecycle_node_name='lifecycle_demo',
+            transition_id=Transition.TRANSITION_CONFIGURE
+        )
+    ])</code></pre>
+
+        <h3>Nav2-Style Lifecycle Management</h3>
+        <pre><code class="yaml"># lifecycle_manager params
+lifecycle_manager:
+  ros__parameters:
+    node_names: 
+      - 'controller_server'
+      - 'planner_server'
+      - 'behavior_server'
+      - 'bt_navigator'
+    autostart: true
+    bond_timeout: 4.0  # Detect dead nodes</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Terminal 1: Run lifecycle node
+ros2 run my_pkg lifecycle_demo
+
+# Terminal 2: Check current state
+ros2 lifecycle get /lifecycle_demo
+# Expected: unconfigured [1]
+
+# List available transitions
+ros2 lifecycle list /lifecycle_demo
+# Expected: configure [1], shutdown [5]
+
+# Trigger configure transition
+ros2 lifecycle set /lifecycle_demo configure
+# Expected: Transitioning successful
+
+# Check new state
+ros2 lifecycle get /lifecycle_demo
+# Expected: inactive [2]
+
+# Activate node
+ros2 lifecycle set /lifecycle_demo activate
+# Expected: Transitioning successful, node starts publishing
+
+# Check topics while active
+ros2 topic echo /output
+# Expected: messages appearing
+
+# Deactivate node
+ros2 lifecycle set /lifecycle_demo deactivate
+# Expected: Publishing stops
+
+# Cleanup and shutdown
+ros2 lifecycle set /lifecycle_demo cleanup
+ros2 lifecycle set /lifecycle_demo shutdown</code></pre>
+
+        <h3>Service Introspection</h3>
+        <pre><code class="bash"># List lifecycle services
+ros2 service list | grep lifecycle_demo
+# Expected:
+#   /lifecycle_demo/change_state
+#   /lifecycle_demo/get_available_states
+#   /lifecycle_demo/get_available_transitions
+#   /lifecycle_demo/get_state
+#   /lifecycle_demo/get_transition_graph
+
+# Get full transition graph
+ros2 service call /lifecycle_demo/get_transition_graph lifecycle_msgs/srv/GetAvailableTransitions</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use <code>ros2 lifecycle nodes</code> to list all lifecycle nodes in the system. This is essential for debugging multi-node lifecycle systems like Nav2.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Transition Callback Returns FAILURE</h3>
+        <p><strong>Symptom:</strong> Node remains in previous state after transition request, logs show callback failure.</p>
+        <p><strong>Root Cause:</strong> Configuration error in on_configure (e.g., parameter not found, file missing).</p>
+        <p><strong>Fix:</strong> Add error handling and return descriptive failures:</p>
+        <pre><code class="c++">CallbackReturn on_configure(const rclcpp_lifecycle::State&amp; previous_state) {
+  try {
+    // Load config file
+    std::string config_path = this-&gt;get_parameter("config_file").as_string();
+    if (!load_config(config_path)) {
+      RCLCPP_ERROR(this-&gt;get_logger(), "Failed to load config: %s", config_path.c_str());
+      return CallbackReturn::FAILURE;
+    }
+    return CallbackReturn::SUCCESS;
+  } catch (const std::exception&amp; e) {
+    RCLCPP_ERROR(this-&gt;get_logger(), "Exception in configure: %s", e.what());
+    return CallbackReturn::ERROR;
+  }
+}</code></pre>
+
+        <h3>Failure 2: Publishing from Inactive State</h3>
+        <p><strong>Symptom:</strong> No messages published even though node is configured.</p>
+        <p><strong>Root Cause:</strong> Lifecycle publishers don't send messages until activated.</p>
+        <p><strong>Fix:</strong> Use LifecyclePublisher and activate it:</p>
+        <pre><code class="c++">// Create LifecyclePublisher in on_configure
+pub_ = this-&gt;create_publisher&lt;std_msgs::msg::String&gt;("topic", 10);
+
+// Must call on_activate to enable publishing
+CallbackReturn on_activate(const rclcpp_lifecycle::State&amp; previous_state) {
+  LifecycleNode::on_activate(previous_state);  // Activates all lifecycle publishers
+  return CallbackReturn::SUCCESS;
+}
+
+// Publishing only works in Active state
+void publish() {
+  if (this-&gt;get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+    pub_-&gt;publish(msg);
+  }
+}</code></pre>
+
+        <h3>Failure 3: Resource Leak on Transition Failure</h3>
+        <p><strong>Symptom:</strong> Resources (files, connections) not released when configure fails.</p>
+        <p><strong>Root Cause:</strong> No cleanup in on_cleanup or exception before resource release.</p>
+        <p><strong>Fix:</strong> Use RAII or explicit cleanup on all exit paths:</p>
+        <pre><code class="c++">CallbackReturn on_configure(const rclcpp_lifecycle::State&amp;) {
+  try {
+    hardware_interface_ = std::make_unique&lt;HardwareInterface&gt;();
+    if (!hardware_interface_-&gt;connect()) {
+      hardware_interface_.reset();  // Clean up on failure
+      return CallbackReturn::FAILURE;
+    }
+    return CallbackReturn::SUCCESS;
+  } catch (...) {
+    hardware_interface_.reset();
+    throw;
+  }
+}
+
+CallbackReturn on_cleanup(const rclcpp_lifecycle::State&amp;) {
+  hardware_interface_.reset();  // Release in cleanup
+  return CallbackReturn::SUCCESS;
+}</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Handle Configuration Failure Gracefully</h3>
+        <p>Create lifecycle node that fails configuration based on parameter:</p>
+
+        <pre><code class="python">from rclpy.lifecycle import Node as LifecycleNode, TransitionCallbackReturn, State
+
+class FlakyLifecycleNode(LifecycleNode):
+    def on_configure(self, state: State):
+        self.declare_parameter('fail_configure', False)
+        
+        if self.get_parameter('fail_configure').value:
+            self.get_logger().error('Configuration intentionally failed')
+            return TransitionCallbackReturn.FAILURE
+        
+        self.get_logger().info('Configuration successful')
+        return TransitionCallbackReturn.SUCCESS</code></pre>
+
+        <p><strong>Detection:</strong> Test with parameter override:</p>
+        <pre><code class="bash"># Should succeed
+ros2 run my_pkg flaky_node
+ros2 lifecycle set /flaky_node configure
+# Expected: Transitioning successful
+
+# Should fail
+ros2 run my_pkg flaky_node --ros-args -p fail_configure:=true
+ros2 lifecycle set /flaky_node configure
+# Expected: Transitioning failed, node remains unconfigured</code></pre>
+
+        <p><strong>Recovery:</strong> Detect failure and retry with corrected parameters or fallback configuration.</p>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Lifecycle transition callbacks block the node. Avoid long-running operations in callbacks. Use separate threads for slow initialization and signal completion via state check.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a comprehensive lifecycle management system:</p>
+
+        <ol>
+          <li>Create a generic lifecycle manager node that controls multiple managed nodes</li>
+          <li>Implement bond-based monitoring to detect crashed managed nodes</li>
+          <li>Add automatic restart logic for failed transitions</li>
+          <li>Create visualization tool showing state of all lifecycle nodes</li>
+          <li>Implement coordinated shutdown that deactivates nodes in reverse dependency order</li>
+          <li>Add diagnostics publisher reporting health of lifecycle system</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="launch.html">Launch Files</a> - Automate lifecycle transitions at startup</li>
+          <li><a href="params.html">Parameters</a> - Load configuration in on_configure</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - Real-world lifecycle usage examples</li>
+          <li><a href="diagnostics.html">Diagnostics</a> - Monitor lifecycle node health</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official docs: <code>design.ros2.org/articles/node_lifecycle.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="qos.html" class="prev">QoS Policies</a>
+        <a href="tf.html" class="next">TF Transforms</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

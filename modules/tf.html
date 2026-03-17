@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TF Transforms - ROS2 Mastery Dojo</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html" class="active">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#robotics">Robotics Model</a> &gt; TF Transforms
+      </nav>
+
+      <h1 class="page-title">TF Transforms</h1>
+      <p class="page-outcome">Track coordinate frames for sensors and actuators in a unified tree.</p>
+
+      <div class="pills">
+        <span class="pill pill-rviz">Needs RViz</span>
+        <span class="pill pill-required">Required</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+        
+        <h3>What</h3>
+        <p>TF (Transform) system manages coordinate frames and transformations between them. It maintains a tree where each frame has exactly one parent. Broadcasters publish transforms, listeners query them. TF2 provides time-based lookups with interpolation and extrapolation. Every robot sensor and link has a frame. Common frames: map, odom, base_link, base_footprint, laser_frame, camera_frame.</p>
+
+        <h3>Why</h3>
+        <p>Sensor data comes in sensor-local coordinates. Navigation plans in map coordinates. Motors act in robot coordinates. TF automatically transforms between frames, handling rotations and translations. It solves "where is the laser scan point relative to the robot base?" without manual matrix math. SLAM, navigation, and manipulation all depend on correct TF trees.</p>
+
+        <h3>When</h3>
+        <p>Use TF for any spatial relationship: sensor mounts, robot links, world frames. Broadcast static transforms for fixed sensor mounts. Broadcast dynamic transforms for moving parts (wheels, arms). Always visualize your TF tree with <code>view_frames</code> to debug connectivity. A broken TF tree will silently break navigation and SLAM.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>C++ Micro-Task</h3>
+        <p>Broadcast and listen to transforms:</p>
+        <pre><code class="c++">#include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+
+class TFDemo : public rclcpp::Node {
+public:
+  TFDemo() : Node("tf_demo"), tf_buffer_(this-&gt;get_clock()), 
+             tf_listener_(tf_buffer_) {
+    
+    // Create transform broadcaster
+    tf_broadcaster_ = std::make_shared&lt;tf2_ros::TransformBroadcaster&gt;(this);
+    
+    timer_ = this-&gt;create_wall_timer(
+      std::chrono::milliseconds(100),
+      std::bind(&amp;TFDemo::broadcast_transform, this));
+  }
+
+private:
+  void broadcast_transform() {
+    geometry_msgs::msg::TransformStamped t;
+    
+    t.header.stamp = this-&gt;get_clock()-&gt;now();
+    t.header.frame_id = "____";  // Parent frame (e.g., "odom")
+    t.child_frame_id = "____";   // Child frame (e.g., "base_link")
+    
+    // Translation (x, y, z in meters)
+    t.transform.translation.x = 1.0;
+    t.transform.translation.y = 0.5;
+    t.transform.translation.z = 0.0;
+    
+    // Rotation (quaternion)
+    t.transform.rotation.x = 0.0;
+    t.transform.rotation.y = 0.0;
+    t.transform.rotation.z = 0.0;
+    t.transform.rotation.w = ____;  // Unit quaternion
+    
+    tf_broadcaster_-&gt;sendTransform(____);
+    
+    // Lookup transform
+    try {
+      auto transform = tf_buffer_.lookupTransform(
+        "odom", "base_link",
+        tf2::TimePointZero);  // Latest available
+      
+      RCLCPP_INFO_THROTTLE(this-&gt;get_logger(), *this-&gt;get_clock(), 1000,
+        "Transform: [%.2f, %.2f, %.2f]",
+        transform.transform.translation.x,
+        transform.transform.translation.y,
+        transform.transform.translation.z);
+        
+    } catch (tf2::TransformException&amp; ex) {
+      RCLCPP_WARN(this-&gt;get_logger(), "TF lookup failed: %s", ex.what());
+    }
+  }
+
+  std::shared_ptr&lt;tf2_ros::TransformBroadcaster&gt; tf_broadcaster_;
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
+  rclcpp::TimerBase::SharedPtr timer_;
+};
+
+int main(int argc, char **argv) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared&lt;TFDemo&gt;());
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+
+        <h3>Python Micro-Task</h3>
+        <p>Static transform and coordinate conversion:</p>
+        <pre><code class="python">import rclpy
+from rclpy.node import Node
+from tf2_ros import TransformBroadcaster, TransformListener, Buffer
+from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
+from geometry_msgs.msg import TransformStamped, PointStamped
+import tf2_geometry_msgs
+from tf_transformations import quaternion_from_euler
+
+class TFStaticDemo(Node):
+    def __init__(self):
+        super().__init__('tf_static_demo')
+        
+        # Broadcast static transform (sensor mount)
+        self.static_broadcaster = StaticTransformBroadcaster(self)
+        self.publish_static_transforms()
+        
+        # Listen to transforms
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+        
+        self.timer = self.create_timer(1.0, self.transform_point)
+    
+    def publish_static_transforms(self):
+        static_transform = TransformStamped()
+        static_transform.header.stamp = self.get_clock().now().to_msg()
+        static_transform.header.frame_id = '____'  # base_link
+        static_transform.child_frame_id = '____'   # laser_frame
+        
+        # Laser mounted 0.1m forward, 0.2m up
+        static_transform.transform.translation.x = ____
+        static_transform.transform.translation.y = 0.0
+        static_transform.transform.translation.z = 0.2
+        
+        # No rotation
+        quat = quaternion_from_euler(0, 0, 0)
+        static_transform.transform.rotation.x = quat[0]
+        static_transform.transform.rotation.y = quat[1]
+        static_transform.transform.rotation.z = quat[2]
+        static_transform.transform.rotation.w = quat[3]
+        
+        self.static_broadcaster.sendTransform(____)
+    
+    def transform_point(self):
+        # Point in laser frame
+        point_laser = PointStamped()
+        point_laser.header.frame_id = 'laser_frame'
+        point_laser.header.stamp = self.get_clock().now().to_msg()
+        point_laser.point.x = 2.0
+        point_laser.point.y = 0.0
+        point_laser.point.z = 0.0
+        
+        try:
+            # Transform to base_link frame
+            point_base = self.tf_buffer.transform(
+                point_laser, '____', timeout=rclpy.duration.Duration(seconds=1.0))
+            
+            self.get_logger().info(
+                f'Point in base_link: [{point_base.point.x:.2f}, '
+                f'{point_base.point.y:.2f}, {point_base.point.z:.2f}]')
+                
+        except Exception as ex:
+            self.get_logger().warn(f'Transform failed: {ex}')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = TFStaticDemo()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Python vs C++)</h2>
+
+        <h3>Broadcast Transform</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto broadcaster = 
+  std::make_shared&lt;tf2_ros::TransformBroadcaster&gt;(node);
+broadcaster-&gt;sendTransform(transform);</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">broadcaster = TransformBroadcaster(self)
+broadcaster.sendTransform(transform)</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Lookup Transform</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">tf2_ros::Buffer buffer(node-&gt;get_clock());
+tf2_ros::TransformListener listener(buffer);
+auto t = buffer.lookupTransform(
+  "target_frame", "source_frame", 
+  tf2::TimePointZero);</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">buffer = Buffer()
+listener = TransformListener(buffer, self)
+t = buffer.lookup_transform(
+  'target_frame', 'source_frame',
+  rclpy.time.Time())</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Transform Point</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">geometry_msgs::msg::PointStamped in, out;
+tf2::doTransform(in, out, transform);</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">import tf2_geometry_msgs
+out = buffer.transform(point, 'target_frame')</code></pre>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Expected TF Tree Structure</h3>
+        <pre><code>map
+ └─ odom
+     └─ base_footprint
+         └─ base_link
+             ├─ laser_frame
+             ├─ camera_frame
+             ├─ imu_frame
+             └─ wheel_left_link / wheel_right_link
+
+Explanation:
+- map: Global fixed frame (from SLAM or known map)
+- odom: Continuous odometry frame (drifts over time)
+- base_footprint: Robot projection on ground
+- base_link: Robot center
+- sensor frames: Individual sensor mounts</code></pre>
+
+        <h3>Static Transform Publisher (Launch)</h3>
+        <pre><code class="python">from launch import LaunchDescription
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    return LaunchDescription([
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='laser_tf',
+            arguments=['0.1', '0', '0.2', '0', '0', '0', 'base_link', 'laser_frame']
+            # args: x y z yaw pitch roll parent_frame child_frame
+        ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='camera_tf',
+            arguments=['0.05', '0', '0.3', '0', '0', '0', 'base_link', 'camera_frame']
+        )
+    ])</code></pre>
+
+        <h3>Robot State Publisher (URDF-based TF)</h3>
+        <pre><code class="python"># Publishes TF from URDF and joint states
+Node(
+    package='robot_state_publisher',
+    executable='robot_state_publisher',
+    parameters=[{
+        'robot_description': robot_description_content,
+        'publish_frequency': 30.0
+    }]
+)</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># View TF tree structure
+ros2 run tf2_tools view_frames
+# Generates frames_YYYY-MM-DD_HH-MM-SS.pdf showing tree
+
+# Check specific transform
+ros2 run tf2_ros tf2_echo source_frame target_frame
+# Example:
+ros2 run tf2_ros tf2_echo map base_link
+# Expected: Translation and rotation updated at ~10 Hz
+
+# Monitor TF topic
+ros2 topic echo /tf
+ros2 topic echo /tf_static
+
+# List all frames
+ros2 run tf2_ros tf2_monitor
+# Shows all frames, publishers, and update rates</code></pre>
+
+        <h3>RViz Visualization</h3>
+        <pre><code class="bash"># Launch RViz
+rviz2
+
+# In RViz:
+# 1. Set Fixed Frame to "map" or "odom"
+# 2. Add display: TF
+# 3. Check "Show Names" and "Show Axes"
+# 4. Expected: Coordinate frame axes for each frame, labels visible
+
+# Verify frame relationships:
+# - All frames should be connected (no isolated branches)
+# - Frame axes should point in expected directions (X=red, Y=green, Z=blue)
+# - Sensor frames should move with robot</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use <code>ros2 run tf2_ros tf2_echo map base_link</code> in a second terminal while driving your robot. Watch translation/rotation change in real-time to verify odometry is publishing correct TF.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Transform Not Available</h3>
+        <p><strong>Symptom:</strong> <code>tf2::LookupException: "base_link" passed to lookupTransform does not exist</code></p>
+        <p><strong>Root Cause:</strong> No node broadcasting the requested transform, or frame name typo.</p>
+        <p><strong>Fix:</strong> Check TF tree and verify broadcaster is running:</p>
+        <pre><code class="bash"># Check what transforms are being published
+ros2 topic echo /tf_static
+ros2 topic echo /tf
+
+# Generate tree diagram
+ros2 run tf2_tools view_frames
+
+# Verify exact frame name
+ros2 run tf2_ros tf2_monitor  # Lists all available frames
+
+# Common typos: "base_link" vs "base_footprint", "map" vs "Map"</code></pre>
+
+        <h3>Failure 2: Extrapolation Into the Future</h3>
+        <p><strong>Symptom:</strong> <code>tf2::ExtrapolationException: Extrapolation into the future</code></p>
+        <p><strong>Root Cause:</strong> Requested transform timestamp is newer than latest available transform.</p>
+        <p><strong>Fix:</strong> Use latest available transform or wait for data:</p>
+        <pre><code class="c++">// Option 1: Use latest available (most common)
+auto transform = buffer.lookupTransform(
+  "target", "source", tf2::TimePointZero);
+
+// Option 2: Lookup with timeout
+try {
+  auto transform = buffer.lookupTransform(
+    "target", "source", tf2::TimePointZero,
+    tf2::durationFromSec(1.0));  // Wait up to 1 second
+} catch (tf2::TransformException&amp; ex) {
+  RCLCPP_ERROR(node-&gt;get_logger(), "Transform failed: %s", ex.what());
+}</code></pre>
+
+        <h3>Failure 3: Multiple Parents (Broken Tree)</h3>
+        <p><strong>Symptom:</strong> <code>TF_REPEATED_DATA</code> error, navigation fails silently.</p>
+        <p><strong>Root Cause:</strong> Two nodes publishing transforms with same child_frame_id but different parents.</p>
+        <p><strong>Fix:</strong> Each frame must have exactly one parent:</p>
+        <pre><code class="bash"># Identify duplicate publishers
+ros2 topic info /tf -v
+# Look for multiple publishers
+
+# Common mistake: robot_state_publisher AND manual broadcaster for base_link
+# Solution: Remove one or remap frames to avoid collision
+
+# Verify tree has no loops
+ros2 run tf2_tools view_frames
+# Inspect PDF for any cycles or disconnected components</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Handle Missing Transform Gracefully</h3>
+        <p>Create node that handles TF failures without crashing:</p>
+
+        <pre><code class="python">def safe_transform_point(self, point, target_frame):
+    try:
+        # Wait up to 1 second for transform
+        transform_timeout = rclpy.duration.Duration(seconds=1.0)
+        
+        # Check if transform exists
+        if not self.tf_buffer.can_transform(
+            target_frame, 
+            point.header.frame_id,
+            point.header.stamp,
+            transform_timeout):
+            self.get_logger().warn(
+                f'Transform from {point.header.frame_id} to {target_frame} not available')
+            return None
+        
+        # Perform transform
+        transformed = self.tf_buffer.transform(point, target_frame, transform_timeout)
+        return transformed
+        
+    except tf2_ros.LookupException as ex:
+        self.get_logger().error(f'Frame not found: {ex}')
+    except tf2_ros.ExtrapolationException as ex:
+        self.get_logger().error(f'Extrapolation error: {ex}')
+    except Exception as ex:
+        self.get_logger().error(f'Transform failed: {ex}')
+    
+    return None</code></pre>
+
+        <p><strong>Detection:</strong> Stop broadcasting a required transform and observe graceful degradation.</p>
+        <p><strong>Recovery:</strong> Queue operations until transform becomes available or use last known good transform with staleness check.</p>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Static transforms published once at startup may not be received by late-joining nodes. Use <code>StaticTransformBroadcaster</code> which periodically republishes, or ensure nodes start in correct order.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a TF monitoring and diagnostics system:</p>
+
+        <ol>
+          <li>Create node that subscribes to /tf and /tf_static</li>
+          <li>Detect missing transforms (expected but not published)</li>
+          <li>Measure transform update rates and detect slow publishers</li>
+          <li>Check for stale transforms (timestamp too old)</li>
+          <li>Validate tree structure (no loops, all frames connected to root)</li>
+          <li>Publish diagnostics messages with TF health status</li>
+          <li>Visualize transform frequency and latency in RViz via markers</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="urdf.html">URDF Models</a> - Define robot structure for automatic TF</li>
+          <li><a href="slam.html">SLAM Toolbox</a> - Publishes map→odom transform</li>
+          <li><a href="amcl.html">AMCL Localization</a> - Also publishes map→odom</li>
+          <li><a href="nav2.html">Nav2 Stack</a> - Requires correct TF tree for navigation</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>Official docs: <code>docs.ros.org/en/humble/Tutorials/Intermediate/Tf2/Tf2-Main.html</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="lifecycle.html" class="prev">Lifecycle Nodes</a>
+        <a href="urdf.html" class="next">URDF Models</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    sidebarOverlay.addEventListener('click', () => {
+      if (window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>
