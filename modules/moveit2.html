@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0d1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>MoveIt2 Deep Dive - ROS2 Mastery Dojo</title>
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+
+      <h2>MoveIt2</h2>
+      <ul>
+        <li><a href="moveit2.html" class="active">MoveIt2 Deep Dive</a></li>
+      </ul>
+
+      <h2>C++ for Robotics</h2>
+      <ul>
+        <li><a href="cpp_robotics.html">C++ for Robotics</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#moveit2">MoveIt2</a> &gt; MoveIt2 Deep Dive
+      </nav>
+
+      <h1 class="page-title">MoveIt2 Deep Dive</h1>
+      <p class="page-outcome">Plan collision-free arm motions, solve inverse kinematics, compute Cartesian paths, and integrate grippers with MoveIt2.</p>
+
+      <div class="pills">
+        <span class="pill pill-nav2">MoveIt2</span>
+        <span class="pill pill-planning">Motion Planning</span>
+        <span class="pill pill-recovery">Manipulation</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+
+        <h3>What</h3>
+        <p>MoveIt2 is the primary motion-planning framework for ROS2. It wraps OMPL (Open Motion Planning Library) and exposes a unified C++ and Python API. Core concepts: <strong>PlanningScene</strong> (3D collision world with robot + obstacles), <strong>MoveGroupInterface</strong> (high-level planning + execution), <strong>RobotModel/RobotState</strong> (URDF-parsed kinematics chain), and <strong>TrajectoryExecution</strong> (send joint trajectories to controllers). MoveIt2 supports multiple IK solvers, multiple motion planners, and plugins for grasp generation, perception, and servo control.</p>
+
+        <h3>Why</h3>
+        <p>Arm motion is far more complex than mobile navigation: 6-7 DOF joint spaces, self-collision avoidance, workspace limits, and tool orientation constraints. OMPL planners search high-dimensional configuration spaces that A* cannot handle. IK solvers translate Cartesian end-effector goals into joint angles. Cartesian path APIs let you move the tool tip in a straight line — essential for welding, painting, and pick-and-place. Without MoveIt2, you would need to implement all of this from scratch.</p>
+
+        <h3>When</h3>
+        <p>Use MoveIt2 whenever you have a robotic arm (manipulator) that needs collision-aware motion planning. Use <strong>RRT-Connect</strong> for fast joint-space planning in unconstrained spaces. Use <strong>PRM</strong> when you need to plan many queries in the same static environment. Use <strong>TRAC-IK</strong> instead of KDL when the default IK solver fails to find solutions near workspace limits. Use <strong>Cartesian planning</strong> for straight-line tool paths. Integrate gripper actions after the arm reaches the pre-grasp pose.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>OMPL Planner Comparison</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Planner</th>
+              <th>Algorithm Family</th>
+              <th>Speed</th>
+              <th>Path Quality</th>
+              <th>Best Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>RRTConnect</code></td>
+              <td>Sampling (bi-directional RRT)</td>
+              <td>Very Fast</td>
+              <td>Unoptimized, jagged</td>
+              <td>Single-query, unconstrained spaces</td>
+            </tr>
+            <tr>
+              <td><code>RRTstar</code></td>
+              <td>Sampling (asymptotically optimal)</td>
+              <td>Slow</td>
+              <td>Asymptotically optimal</td>
+              <td>When path length/quality matters</td>
+            </tr>
+            <tr>
+              <td><code>PRM</code></td>
+              <td>Probabilistic Roadmap</td>
+              <td>Slow build, fast query</td>
+              <td>Good after roadmap built</td>
+              <td>Multi-query, static environments</td>
+            </tr>
+            <tr>
+              <td><code>PRMstar</code></td>
+              <td>PRM (asymptotically optimal)</td>
+              <td>Slower build</td>
+              <td>Near-optimal</td>
+              <td>High-quality multi-query planning</td>
+            </tr>
+            <tr>
+              <td><code>EST</code></td>
+              <td>Expansive-Space Trees</td>
+              <td>Medium</td>
+              <td>Medium</td>
+              <td>Narrow passages, constrained spaces</td>
+            </tr>
+            <tr>
+              <td><code>LBTRRT</code></td>
+              <td>Lower-Bound Tree RRT</td>
+              <td>Fast</td>
+              <td>Near-optimal fast</td>
+              <td>Real-time replanning</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>RRT vs PRM — When to Use Which</h3>
+        <pre><code class="plaintext">RRT (Rapidly-exploring Random Tree)
+────────────────────────────────────
+Idea:    Grow a tree from start by sampling random configs.
+         Extend nearest node toward sample. Stop when goal reached.
+Pros:    Single-query fast, handles any constraint
+Cons:    Non-optimal path, must re-plan every query
+Use:     Robot arm needs to reach a new pose quickly (pick &amp; place)
+
+RRT-Connect (bidirectional):
+  - Grows TWO trees: one from start, one from goal
+  - Connects them when close enough
+  - ~10x faster than single-direction RRT
+  - DEFAULT choice in MoveIt2
+
+PRM (Probabilistic Roadmap Method)
+────────────────────────────────────
+Phase 1: Build roadmap by sampling N random collision-free configs.
+         Connect nearby configs with local planner edges.
+Phase 2: Connect start + goal to roadmap, query shortest path.
+Pros:    Amortises build cost over many queries — fast at query time
+Cons:    Expensive upfront; bad for dynamic environments
+Use:     Assembly lines — same robot, same cell, hundreds of plans/day
+
+Decision rule:
+  Single goal, one-shot query  →  RRT-Connect
+  Same environment, many goals →  PRM
+  Path quality critical        →  RRT* or PRM*
+  Narrow passages              →  EST or BKPIECE</code></pre>
+
+        <h3>Configure OMPL Planner in MoveIt2</h3>
+        <pre><code class="yaml"># ompl_planning.yaml
+planner_configs:
+  RRTConnectkConfigDefault:
+    type: geometric::RRTConnect
+    range: 0.0  # Max step size (0 = auto)
+
+  PRMkConfigDefault:
+    type: geometric::PRM
+    max_nearest_neighbors: 10
+
+  RRTstarkConfigDefault:
+    type: geometric::RRTstar
+    range: 0.0
+    goal_bias: 0.05
+
+arm:  # Replace with your planning group name
+  default_planner_config: RRTConnectkConfigDefault
+  planner_configs:
+    - RRTConnectkConfigDefault
+    - PRMkConfigDefault
+    - RRTstarkConfigDefault
+  
+  # Replanning settings
+  longest_valid_segment_fraction: ____  # 0.005
+  
+  # Goal tolerance
+  goal_joint_tolerance: 0.0001
+  goal_position_tolerance: ____  # 0.0001 (meters)
+  goal_orientation_tolerance: 0.001</code></pre>
+
+        <h3>IK Solver Comparison — KDL vs TRAC-IK</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>KDL (default)</th>
+              <th>TRAC-IK</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Algorithm</td>
+              <td>Jacobian-based iterative</td>
+              <td>Combines TRAC + SQP optimisation</td>
+            </tr>
+            <tr>
+              <td>Success rate</td>
+              <td>~60-70% near workspace limits</td>
+              <td>~95%+ near workspace limits</td>
+            </tr>
+            <tr>
+              <td>Speed</td>
+              <td>Fast (~0.1 ms/query)</td>
+              <td>Slightly slower (~0.5 ms/query)</td>
+            </tr>
+            <tr>
+              <td>Joint limits</td>
+              <td>Often violates limits</td>
+              <td>Respects joint limits by design</td>
+            </tr>
+            <tr>
+              <td>Redundant DOF</td>
+              <td>Poor handling</td>
+              <td>Good handling (null-space)</td>
+            </tr>
+            <tr>
+              <td>Install</td>
+              <td>Built-in to MoveIt2</td>
+              <td><code>sudo apt install ros-humble-trac-ik-kinematics-plugin</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Switch to TRAC-IK</h3>
+        <pre><code class="yaml"># kinematics.yaml — change solver plugin
+arm:
+  kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+  kinematics_solver_timeout: 0.005  # 5 ms max per IK call
+  kinematics_solver_attempts: 3
+  
+  # TRAC-IK mode (Speed, Distance, Manipulation1, Manipulation2)
+  solve_type: ____  # Speed (fastest), Distance (closest joints)
+
+# Compare: default KDL solver
+# arm:
+#   kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code</h2>
+
+        <h3>MoveGroupInterface — Plan &amp; Execute (C++)</h3>
+        <pre><code class="cpp">// arm_mover.cpp
+#include &lt;rclcpp/rclcpp.hpp&gt;
+#include &lt;moveit/move_group_interface/move_group_interface.h&gt;
+#include &lt;moveit/planning_scene_interface/planning_scene_interface.h&gt;
+#include &lt;geometry_msgs/msg/pose.hpp&gt;
+
+int main(int argc, char** argv) {
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared&lt;rclcpp::Node&gt;(
+    "arm_mover",
+    rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true));
+
+  // Spin in background thread (MoveIt2 requires this)
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node);
+  auto spinner = std::thread([&executor]() { executor.spin(); });
+
+  // Create MoveGroupInterface for "arm" planning group
+  moveit::planning_interface::MoveGroupInterface move_group(node, "arm");
+  move_group.setPlanningTime(5.0);    // Max 5 seconds to find plan
+  move_group.setNumPlanningAttempts(3);
+
+  // --- Joint-space goal ---
+  std::vector&lt;double&gt; joint_goal = {0.0, -1.57, 0.0, -1.57, 0.0, 0.0};
+  move_group.setJointValueTarget(____);  // joint_goal
+
+  moveit::planning_interface::MoveGroupInterface::Plan plan;
+  bool success = (move_group.plan(plan) ==
+                  moveit::core::MoveItErrorCode::SUCCESS);
+
+  if (success) {
+    move_group.execute(plan);
+  } else {
+    RCLCPP_ERROR(node-&gt;get_logger(), "Planning failed!");
+  }
+
+  // --- Cartesian-space goal (end-effector pose) ---
+  geometry_msgs::msg::Pose target_pose;
+  target_pose.orientation.w = 1.0;
+  target_pose.position.x = 0.4;
+  target_pose.position.y = 0.1;
+  target_pose.position.z = ____;  // 0.5
+
+  move_group.setPoseTarget(target_pose);
+  success = (move_group.plan(plan) ==
+             moveit::core::MoveItErrorCode::SUCCESS);
+  if (success) move_group.execute(plan);
+
+  spinner.join();
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+
+        <h3>Cartesian Path Planning (Straight-Line Tool Motion)</h3>
+        <pre><code class="cpp">// cartesian_path.cpp
+#include &lt;moveit/move_group_interface/move_group_interface.h&gt;
+
+void plan_cartesian_path(
+    moveit::planning_interface::MoveGroupInterface&amp; move_group) {
+
+  // Define waypoints for straight-line motion
+  std::vector&lt;geometry_msgs::msg::Pose&gt; waypoints;
+
+  geometry_msgs::msg::Pose start_pose =
+      move_group.getCurrentPose().pose;
+
+  // Move 10 cm forward along x
+  geometry_msgs::msg::Pose wp1 = start_pose;
+  wp1.position.x += 0.1;
+  waypoints.push_back(wp1);
+
+  // Move 10 cm upward along z
+  geometry_msgs::msg::Pose wp2 = wp1;
+  wp2.position.z += 0.1;
+  waypoints.push_back(wp2);
+
+  // Move back to start xy, keep z raised
+  geometry_msgs::msg::Pose wp3 = wp2;
+  wp3.position.x = start_pose.position.x;
+  waypoints.push_back(wp3);
+
+  // Compute Cartesian path
+  moveit_msgs::msg::RobotTrajectory trajectory;
+  const double eef_step = 0.01;       // 1 cm interpolation step
+  const double jump_threshold = ____;  // 0.0 (disables jump check)
+
+  double fraction = move_group.computeCartesianPath(
+      waypoints, eef_step, jump_threshold, trajectory);
+
+  RCLCPP_INFO(rclcpp::get_logger("cartesian"),
+    "Cartesian path: %.2f%% achieved", fraction * 100.0);
+
+  if (fraction &gt; 0.95) {  // Accept if &gt;95% of path planned
+    moveit::planning_interface::MoveGroupInterface::Plan cart_plan;
+    cart_plan.trajectory_ = trajectory;
+    move_group.execute(cart_plan);
+  }
+}</code></pre>
+
+        <h3>Add Collision Object to Planning Scene</h3>
+        <pre><code class="cpp">// add_box.cpp
+#include &lt;moveit/planning_scene_interface/planning_scene_interface.h&gt;
+#include &lt;moveit_msgs/msg/collision_object.hpp&gt;
+#include &lt;shape_msgs/msg/solid_primitive.hpp&gt;
+
+void add_box_obstacle(
+    moveit::planning_interface::PlanningSceneInterface&amp; psi) {
+
+  moveit_msgs::msg::CollisionObject box;
+  box.header.frame_id = "world";
+  box.id = "obstacle_box";
+
+  // Define box shape
+  shape_msgs::msg::SolidPrimitive primitive;
+  primitive.type = shape_msgs::msg::SolidPrimitive::BOX;
+  primitive.dimensions = {0.2, 0.2, 0.4};  // x, y, z in meters
+
+  // Define pose of box
+  geometry_msgs::msg::Pose box_pose;
+  box_pose.orientation.w = 1.0;
+  box_pose.position.x = 0.5;
+  box_pose.position.y = 0.0;
+  box_pose.position.z = ____;  // 0.2 (half-height off ground)
+
+  box.primitives.push_back(primitive);
+  box.primitive_poses.push_back(box_pose);
+  box.operation = moveit_msgs::msg::CollisionObject::ADD;
+
+  // Apply to scene — planner will now avoid this box
+  psi.applyCollisionObject(box);
+}</code></pre>
+
+        <h3>Grasp &amp; Gripper Integration</h3>
+        <pre><code class="cpp">// gripper_action.cpp
+#include &lt;rclcpp/rclcpp.hpp&gt;
+#include &lt;rclcpp_action/rclcpp_action.hpp&gt;
+#include &lt;control_msgs/action/gripper_command.hpp&gt;
+
+class GripperController : public rclcpp::Node {
+public:
+  using GripperCommand = control_msgs::action::GripperCommand;
+  using GoalHandle = rclcpp_action::ClientGoalHandle&lt;GripperCommand&gt;;
+
+  GripperController() : Node("gripper_controller") {
+    client_ = rclcpp_action::create_client&lt;GripperCommand&gt;(
+        this, "/gripper_controller/gripper_cmd");
+  }
+
+  void open_gripper() { send_command(0.08, 50.0); }  // 8cm open, 50N
+  void close_gripper() { send_command(____,  80.0); }  // 0.0 (fully closed)
+
+private:
+  rclcpp_action::Client&lt;GripperCommand&gt;::SharedPtr client_;
+
+  void send_command(double position, double max_effort) {
+    if (!client_-&gt;wait_for_action_server(std::chrono::seconds(5))) {
+      RCLCPP_ERROR(get_logger(), "Gripper action server not available");
+      return;
+    }
+    GripperCommand::Goal goal;
+    goal.command.position = position;
+    goal.command.max_effort = max_effort;
+
+    auto send_goal_options =
+        rclcpp_action::Client&lt;GripperCommand&gt;::SendGoalOptions();
+    send_goal_options.result_callback =
+        [this](const GoalHandle::WrappedResult&amp; result) {
+          if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
+            RCLCPP_INFO(get_logger(), "Gripper command succeeded");
+          }
+        };
+    client_-&gt;async_send_goal(goal, send_goal_options);
+  }
+};
+
+// Typical pick-and-place sequence:
+// 1. plan arm to pre_grasp_pose (10 cm above object)
+// 2. Cartesian path down 10 cm to grasp_pose
+// 3. close_gripper()
+// 4. Cartesian path up 10 cm (lift object)
+// 5. plan arm to place_pose
+// 6. open_gripper()</code></pre>
+
+        <h3>MoveGroupInterface — Python Equivalent</h3>
+        <pre><code class="python">#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from moveit.planning import MoveItPy
+from moveit.core.robot_state import RobotState
+import numpy as np
+
+def main():
+    rclpy.init()
+    node = rclpy.create_node('arm_mover_py')
+
+    # Create MoveItPy instance (loads URDF/SRDF from param server)
+    moveit = MoveItPy(node_name="moveit_py")
+    arm = moveit.get_planning_component("arm")
+
+    # --- Joint-space goal ---
+    arm.set_start_state_to_current_state()
+    
+    robot_state = RobotState(moveit.get_robot_model())
+    robot_state.set_joint_group_positions("arm", [0.0, -1.57, 0.0, -1.57, 0.0, 0.0])
+    arm.set_goal_state(robot_state=____)  # robot_state
+
+    plan_result = arm.plan()
+    if plan_result:
+        moveit.execute(plan_result.trajectory, controllers=[])
+
+    # --- Cartesian-space goal ---
+    from geometry_msgs.msg import PoseStamped
+    pose_goal = PoseStamped()
+    pose_goal.header.frame_id = "world"
+    pose_goal.pose.position.x = 0.4
+    pose_goal.pose.position.y = 0.1
+    pose_goal.pose.position.z = 0.5
+    pose_goal.pose.orientation.w = 1.0
+
+    arm.set_goal_state(pose_stamped_msg=pose_goal, pose_link="tool0")
+    plan_result = arm.plan()
+    if plan_result:
+        moveit.execute(plan_result.trajectory, controllers=[])
+
+    rclpy.shutdown()
+
+if __name__ == "__main__":
+    main()</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Planning Pipeline Config</h3>
+        <pre><code class="yaml"># move_group.launch.py parameters
+move_group:
+  ros__parameters:
+    # Planning pipeline
+    planning_plugin: ompl_interface/OMPLPlanner
+    request_adapters:
+      - default_planner_request_adapters/AddTimeOptimalParameterization
+      - default_planner_request_adapters/ResolveConstraintFrames
+      - default_planner_request_adapters/FixWorkspaceBounds
+      - default_planner_request_adapters/FixStartStateBounds
+      - default_planner_request_adapters/FixStartStateCollision
+      - default_planner_request_adapters/FixStartStatePathConstraints
+
+    # Execution
+    trajectory_execution:
+      allowed_execution_duration_scaling: 1.2
+      allowed_goal_duration_margin: 0.5
+      allowed_start_tolerance: ____  # 0.01 (joint position error tolerance)
+
+    # Sensor-based collision detection
+    octomap_frame: world
+    octomap_resolution: 0.025  # 2.5 cm voxels</code></pre>
+
+        <h3>Velocity &amp; Acceleration Scaling</h3>
+        <pre><code class="cpp">// Scale down speed for safety during testing
+move_group.setMaxVelocityScalingFactor(____);      // 0.1 = 10% of max speed
+move_group.setMaxAccelerationScalingFactor(0.1);
+
+// Full speed for production
+move_group.setMaxVelocityScalingFactor(1.0);
+move_group.setMaxAccelerationScalingFactor(1.0);</code></pre>
+
+        <h3>Path Constraints</h3>
+        <pre><code class="cpp">// Keep end-effector upright (e.g., carrying cup of liquid)
+moveit_msgs::msg::Constraints upright_constraints;
+moveit_msgs::msg::OrientationConstraint ocm;
+ocm.link_name = "tool0";
+ocm.header.frame_id = "world";
+ocm.orientation.w = 1.0;
+ocm.absolute_x_axis_tolerance = 0.1;  // ±0.1 rad tilt allowed
+ocm.absolute_y_axis_tolerance = ____;  // 0.1
+ocm.absolute_z_axis_tolerance = 0.3;  // Free rotation around z
+ocm.weight = 1.0;
+
+upright_constraints.orientation_constraints.push_back(ocm);
+move_group.setPathConstraints(upright_constraints);
+
+// Remember to clear after use!
+move_group.clearPathConstraints();</code></pre>
+
+        <h3>SRDF — Planning Groups &amp; Named States</h3>
+        <pre><code class="xml">&lt;!-- robot.srdf --&gt;
+&lt;robot name="my_robot"&gt;
+
+  &lt;!-- Define planning group for arm joints --&gt;
+  &lt;group name="arm"&gt;
+    &lt;chain base_link="base_link" tip_link="____"/&gt;  &lt;!-- tool0 --&gt;
+  &lt;/group&gt;
+
+  &lt;!-- Define planning group for gripper --&gt;
+  &lt;group name="gripper"&gt;
+    &lt;joint name="finger_joint_1"/&gt;
+    &lt;joint name="finger_joint_2"/&gt;
+  &lt;/group&gt;
+
+  &lt;!-- Named states for arm --&gt;
+  &lt;group_state name="home" group="arm"&gt;
+    &lt;joint name="joint_1" value="0"/&gt;
+    &lt;joint name="joint_2" value="-1.57"/&gt;
+    &lt;joint name="joint_3" value="0"/&gt;
+    &lt;joint name="joint_4" value="-1.57"/&gt;
+    &lt;joint name="joint_5" value="0"/&gt;
+    &lt;joint name="joint_6" value="____"/&gt;  &lt;!-- 0 --&gt;
+  &lt;/group_state&gt;
+
+  &lt;!-- Self-collision disable pairs (adjacent links touch by design) --&gt;
+  &lt;disable_collisions link1="link_1" link2="link_2" reason="Adjacent"/&gt;
+&lt;/robot&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Command-Line Checks</h3>
+        <pre><code class="bash"># Verify MoveIt2 move_group node running
+ros2 node list | grep move_group
+# Expected: /move_group
+
+# Check available planning groups
+ros2 param get /move_group robot_description_semantic
+# Should return SRDF XML content
+
+# List action servers (trajectory execution)
+ros2 action list
+# Expected: /execute_trajectory, /move_action
+
+# Get current joint states
+ros2 topic echo /joint_states --once
+
+# Check planning scene (look for collision objects)
+ros2 service call /get_planning_scene \
+  moveit_msgs/srv/GetPlanningScene \
+  "{components: {components: 255}}"
+
+# Monitor MoveIt2 logs
+ros2 topic echo /rosout | grep -i moveit
+
+# Test IK service directly
+ros2 service call /compute_ik \
+  moveit_msgs/srv/GetPositionIK \
+  "{ik_request: {group_name: 'arm', \
+    pose_stamped: {header: {frame_id: 'world'}, \
+    pose: {position: {x: 0.4, y: 0.0, z: 0.5}, \
+    orientation: {w: 1.0}}}}}"</code></pre>
+
+        <h3>RViz2 Visual Checks</h3>
+        <pre><code class="bash"># Launch MoveIt2 with RViz2
+ros2 launch my_robot_moveit demo.launch.py
+
+# In RViz2 MotionPlanning panel:
+# 1. Planning tab → set Start State = current, Goal State = random valid
+# 2. Click Plan → see trajectory preview (orange ghost)
+# 3. Click Execute → watch real robot move
+# 4. Scene Objects tab → add boxes, see planner avoid them
+
+# Visualise planning scene programmatically
+ros2 run moveit_ros_planning_interface moveit_cpp_tutorial</code></pre>
+
+        <h3>Benchmark IK Solvers</h3>
+        <pre><code class="python"># ik_benchmark.py — compare KDL vs TRAC-IK success rates
+import rclpy, time, random
+from rclpy.node import Node
+from moveit_msgs.srv import GetPositionIK
+from geometry_msgs.msg import PoseStamped
+
+class IKBenchmark(Node):
+    def __init__(self):
+        super().__init__('ik_benchmark')
+        self.client = self.create_client(GetPositionIK, '/compute_ik')
+        self.client.wait_for_service()
+
+    def test_ik(self, x, y, z):
+        req = GetPositionIK.Request()
+        req.ik_request.group_name = 'arm'
+        ps = PoseStamped()
+        ps.header.frame_id = 'world'
+        ps.pose.position.x, ps.pose.position.y, ps.pose.position.z = x, y, z
+        ps.pose.orientation.w = 1.0
+        req.ik_request.pose_stamped = ps
+        req.ik_request.timeout.sec = ____  # 1 second timeout
+        future = self.client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        return future.result().error_code.val == 1  # 1 = SUCCESS
+
+def main():
+    rclpy.init()
+    bench = IKBenchmark()
+    successes = sum(bench.test_ik(
+        random.uniform(0.2, 0.6),
+        random.uniform(-0.4, 0.4),
+        random.uniform(0.1, 0.8)) for _ in range(100))
+    bench.get_logger().info(f"IK success rate: {successes}%")
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: "No IK Solution Found"</h3>
+        <p><strong>Symptom:</strong> <code>move_group.plan()</code> fails with IK error; arm cannot reach pose.</p>
+        <p><strong>Root Cause:</strong> KDL diverges near workspace limits or singularities.</p>
+        <p><strong>Fix:</strong> Switch to TRAC-IK and check workspace reachability:</p>
+        <pre><code class="yaml"># kinematics.yaml
+arm:
+  kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+  kinematics_solver_timeout: 0.005
+  solve_type: ____  # Speed</code></pre>
+        <pre><code class="bash"># Visualise reachability workspace
+ros2 run moveit_ros_planning_interface \
+  moveit_print_planning_model_info
+# Check joint limits in URDF — compare to target pose</code></pre>
+
+        <h3>Failure 2: Cartesian Path Returns Low Fraction (&lt;0.9)</h3>
+        <p><strong>Symptom:</strong> <code>computeCartesianPath</code> returns fraction 0.3-0.7; trajectory incomplete.</p>
+        <p><strong>Root Cause:</strong> Path passes through singularity or collision region.</p>
+        <p><strong>Fix:</strong> Reduce step size and break path into segments:</p>
+        <pre><code class="cpp">// Finer interpolation catches singularities earlier
+double fraction = move_group.computeCartesianPath(
+    waypoints,
+    0.005,   // Reduce from 0.01 to 0.005 (5 mm steps)
+    ____,    // 0.0 (disable jump threshold initially)
+    trajectory);
+
+// If still &lt;0.9, split waypoints into two calls and plan with OMPL
+// for the gap between them</code></pre>
+
+        <h3>Failure 3: Gripper Doesn't Close on Object</h3>
+        <p><strong>Symptom:</strong> Gripper closes but object falls; grasp not stable.</p>
+        <p><strong>Root Cause:</strong> Grasp pose offset wrong; approach direction incorrect.</p>
+        <p><strong>Fix:</strong> Tune pre-grasp offset and add attach/detach to planning scene:</p>
+        <pre><code class="cpp">// After gripper closes, tell MoveIt2 the object is attached
+moveit_msgs::msg::AttachedCollisionObject aco;
+aco.link_name = "tool0";            // Link holding the object
+aco.object.id = "my_object";       // Must match collision object id
+aco.object.operation = moveit_msgs::msg::CollisionObject::ADD;
+// This prevents MoveIt2 from treating object as obstacle
+planning_scene_interface.applyAttachedCollisionObject(aco);
+
+// After placing:
+aco.object.operation = moveit_msgs::msg::CollisionObject::____; // REMOVE</code></pre>
+
+        <h3>Failure 4: Planning Takes Too Long (&gt;5 s)</h3>
+        <p><strong>Symptom:</strong> Planner times out; no solution found in time budget.</p>
+        <p><strong>Root Cause:</strong> Path constraints too tight; environment too cluttered; wrong planner.</p>
+        <p><strong>Fix:</strong> Use RRTConnect, loosen tolerances, simplify scene:</p>
+        <pre><code class="cpp">move_group.setPlannerId("RRTConnectkConfigDefault");  // Fastest
+move_group.setPlanningTime(____);                       // 10.0 seconds (increase budget)
+move_group.setGoalPositionTolerance(0.01);             // Loosen from 0.0001 to 0.01 m
+move_group.setGoalOrientationTolerance(0.05);          // Loosen orientation</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Observe IK Failure at Workspace Boundary</h3>
+        <p>Force the arm to a pose near or outside its workspace:</p>
+
+        <pre><code class="python"># moveit_ik_fail.py
+import rclpy
+from moveit.planning import MoveItPy
+from geometry_msgs.msg import PoseStamped
+
+rclpy.init()
+node = rclpy.create_node('ik_fail_demo')
+moveit = MoveItPy(node_name='moveit_py')
+arm = moveit.get_planning_component('arm')
+
+# Intentional error: pose far outside workspace
+pose = PoseStamped()
+pose.header.frame_id = 'world'
+pose.pose.position.x = 5.0  # Way out of reach!
+pose.pose.position.z = 0.5
+pose.pose.orientation.w = 1.0
+
+arm.set_goal_state(pose_stamped_msg=pose, pose_link='tool0')
+result = arm.plan()
+if not result:
+    node.get_logger().error('Plan failed as expected — IK out of workspace')
+rclpy.shutdown()</code></pre>
+
+        <p><strong>Observe:</strong></p>
+        <ul>
+          <li>MoveIt2 logs: <code>No IK solution found</code></li>
+          <li>RViz2: Goal marker turns red</li>
+          <li>plan() returns None or empty result</li>
+        </ul>
+
+        <p><strong>Recovery:</strong></p>
+        <pre><code class="python"># Check reachability before planning
+from moveit.core.robot_state import RobotState
+robot_state = RobotState(moveit.get_robot_model())
+ik_result = robot_state.set_from_ik('arm', pose.pose, 'tool0', 0.1)
+if not ik_result:
+    node.get_logger().warn('Pose unreachable — adjust target position')</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Never send <code>setMaxVelocityScalingFactor(1.0)</code> on a physical robot without first verifying the trajectory in simulation. Always start at 0.1 (10%) and increase gradually.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Build a complete pick-and-place pipeline:</p>
+
+        <ol>
+          <li>Implement full pick-and-place: detect object with camera, compute grasp pose, execute with MoveIt2</li>
+          <li>Add perception integration: subscribe to PointCloud2, build OctoMap for MoveIt2 collision avoidance</li>
+          <li>Write a custom OMPL planner plugin by inheriting from <code>ompl::base::Planner</code></li>
+          <li>Benchmark KDL vs TRAC-IK across 1000 random poses, plot success rates</li>
+          <li>Implement RRT* with post-processing (shortcutting) to improve Cartesian path smoothness</li>
+          <li>Create a MoveIt2 servo node for real-time teleoperation (incremental Cartesian control)</li>
+          <li>Integrate MoveIt2 Task Constructor for multi-stage manipulation tasks</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="urdf.html">URDF Models</a> - Robot description needed by MoveIt2</li>
+          <li><a href="cpp_robotics.html">C++ for Robotics</a> - Write MoveIt2 nodes in C++</li>
+          <li><a href="actions.html">Actions</a> - MoveIt2 execution uses ROS2 actions</li>
+          <li><a href="gazebo.html">Gazebo Simulation</a> - Test MoveIt2 plans in simulation</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>MoveIt2 docs: <code>moveit.picknik.ai/main/doc/tutorials/tutorials.html</code></p>
+          <p>OMPL docs: <code>ompl.kavrakilab.org/planners.html</code></p>
+          <p>TRAC-IK paper: Beeson &amp; Ames, HUMANOIDS 2015</p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="dds.html" class="prev">DDS &amp; Discovery</a>
+        <a href="cpp_robotics.html" class="next">C++ for Robotics</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script src="../js/pwa.js" defer></script>
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    // Only close if clicking the overlay directly, not sidebar elements
+    sidebarOverlay.addEventListener('click', (event) => {
+      if (event.target === sidebarOverlay && window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+
+    // Dropdown menu toggle for sidebar sections
+    const sidebarHeadings = sidebar.querySelectorAll('h2');
+    sidebarHeadings.forEach(heading => {
+      heading.addEventListener('click', () => {
+        heading.classList.toggle('collapsed');
+      });
+      // Expand all by default on desktop
+      if (window.innerWidth > 968) {
+        heading.classList.remove('collapsed');
+      }
+    });
+
+    // Handle dropdown state on resize
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 968) {
+        // Desktop: expand all sections
+        sidebarHeadings.forEach(h => h.classList.remove('collapsed'));
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0d1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>C++ for Robotics - ROS2 Mastery Dojo</title>
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+
+      <h2>MoveIt2</h2>
+      <ul>
+        <li><a href="moveit2.html">MoveIt2 Deep Dive</a></li>
+      </ul>
+
+      <h2>C++ for Robotics</h2>
+      <ul>
+        <li><a href="cpp_robotics.html" class="active">C++ for Robotics</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#cpp">C++ for Robotics</a> &gt; C++ for Robotics
+      </nav>
+
+      <h1 class="page-title">C++ for Robotics</h1>
+      <p class="page-outcome">Master the C++ patterns that power every ROS2 node: OOP, smart pointers, rclcpp, and custom publishers/subscribers.</p>
+
+      <div class="pills">
+        <span class="pill pill-nav2">C++17</span>
+        <span class="pill pill-planning">rclcpp</span>
+        <span class="pill pill-recovery">OOP</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+
+        <h3>What</h3>
+        <p>ROS2 nodes are predominantly written in C++ using the <strong>rclcpp</strong> (ROS2 C++ client library). rclcpp wraps DDS communication in a type-safe, modern C++ API. Core constructs: <code>rclcpp::Node</code> (base class for all nodes), <code>Publisher</code>, <code>Subscription</code>, <code>Service</code>, <code>Client</code>, <code>Timer</code>, and <code>CallbackGroup</code>. Nearly every ROS2 internal — Nav2, MoveIt2, ros2_control — is a C++ class inheriting from <code>rclcpp::Node</code> or <code>rclcpp_lifecycle::LifecycleNode</code>. Smart pointers (<code>shared_ptr</code>, <code>unique_ptr</code>) are used throughout instead of raw pointers.</p>
+
+        <h3>Why</h3>
+        <p>C++ delivers deterministic, low-latency execution critical for real-time control loops. Python adds GIL overhead and unpredictable garbage-collection pauses. Hardware drivers, motion controllers, and sensor processing pipelines need microsecond-level predictability. Understanding C++ OOP is also required to extend Nav2/MoveIt2 with custom plugins — every plugin is a C++ class with a defined interface. Smart pointers prevent memory leaks and dangling-pointer bugs that are especially dangerous in long-running robots.</p>
+
+        <h3>When</h3>
+        <p>Write ROS2 nodes in C++ for: hardware drivers, real-time controllers, Nav2/MoveIt2 plugins, performance-critical algorithms (SLAM, perception). Use Python for: rapid prototyping, scripting, task-level logic, testing. Master the patterns in this module before writing any MoveIt2 C++ code. Understand <code>shared_ptr</code> before touching any Nav2 plugin — they are the primary ownership mechanism in those stacks.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>OOP in C++ — Classes, Inheritance, Polymorphism</h3>
+        <pre><code class="cpp">// sensor_base.hpp — Abstract base class (interface)
+#pragma once
+#include &lt;string&gt;
+
+class SensorBase {
+public:
+  // Pure virtual method — subclasses MUST implement
+  virtual double read() = 0;
+
+  // Virtual method with default implementation
+  virtual std::string name() const { return "UnnamedSensor"; }
+
+  // Virtual destructor — ALWAYS add when class has virtual methods
+  virtual ~SensorBase() = default;
+};
+
+// laser_sensor.hpp — Concrete derived class
+#include "sensor_base.hpp"
+
+class LaserSensor : public SensorBase {
+public:
+  explicit LaserSensor(double range_max)
+    : range_max_(range_max) {}
+
+  // Override pure virtual — provides implementation
+  double read() override {
+    // Simulate reading
+    return range_max_ * 0.75;
+  }
+
+  std::string name() const override { return "LaserSensor"; }
+
+private:
+  double range_max_;
+};
+
+// imu_sensor.hpp
+#include "sensor_base.hpp"
+
+class ImuSensor : public SensorBase {
+public:
+  double read() override { return 9.81; }  // Returns gravity magnitude
+  std::string name() const override { return "____"; }  // "ImuSensor"
+};
+
+// Usage — polymorphism through base pointer
+#include &lt;vector&gt;
+#include &lt;memory&gt;
+#include &lt;iostream&gt;
+
+int main() {
+  // Store different sensor types in same container
+  std::vector&lt;std::shared_ptr&lt;SensorBase&gt;&gt; sensors;
+  sensors.push_back(std::make_shared&lt;LaserSensor&gt;(10.0));
+  sensors.push_back(std::make_shared&lt;ImuSensor&gt;());
+
+  for (auto&amp; sensor : sensors) {
+    std::cout &lt;&lt; sensor-&gt;name()
+              &lt;&lt; " reads: " &lt;&lt; sensor-&gt;read() &lt;&lt; "\n";
+  }
+  // Output:
+  // LaserSensor reads: 7.5
+  // ImuSensor reads: 9.81
+  return 0;
+}</code></pre>
+
+        <h3>Pointers &amp; Memory Management</h3>
+        <pre><code class="cpp">// memory_patterns.cpp
+
+// --- Raw pointer (avoid in modern C++) ---
+int* raw = new int(42);
+// MUST manually delete — easy to forget or double-delete
+delete raw;
+
+// --- unique_ptr — sole ownership, no copying ---
+#include &lt;memory&gt;
+
+auto up = std::make_unique&lt;int&gt;(42);
+// Memory freed automatically when up goes out of scope
+// Cannot copy unique_ptr:
+// auto up2 = up;  // ERROR: deleted copy constructor
+auto up2 = std::move(up);  // Transfer ownership — up is now null
+
+// --- shared_ptr — shared ownership, reference counted ---
+auto sp1 = std::make_shared&lt;int&gt;(42);
+auto sp2 = sp1;  // Both own the int — ref count = 2
+{
+  auto sp3 = sp1;  // ref count = 3
+}  // sp3 destroyed — ref count = 2
+// int freed when LAST shared_ptr is destroyed (ref count → 0)
+
+std::cout &lt;&lt; "use_count: " &lt;&lt; sp1.use_count() &lt;&lt; "\n";  // ____  // 2
+
+// --- weak_ptr — observe without owning (breaks circular refs) ---
+std::weak_ptr&lt;int&gt; wp = sp1;
+if (auto locked = wp.lock()) {  // Check object still alive
+  std::cout &lt;&lt; "Value: " &lt;&lt; *locked &lt;&lt; "\n";
+}
+
+// --- Stack allocation (fastest, no heap) ---
+int stack_val = 42;  // Freed when function returns — prefer this
+
+// Stack vs Heap decision:
+// Stack:  small, fixed-size, short-lived  →  local variables
+// Heap:   large, dynamic size, long-lived →  shared_ptr / unique_ptr</code></pre>
+
+        <h3>Smart Pointer Quick Reference</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Ownership</th>
+              <th>Copy?</th>
+              <th>Move?</th>
+              <th>ROS2 Usage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>unique_ptr&lt;T&gt;</code></td>
+              <td>Sole owner</td>
+              <td>No</td>
+              <td>Yes</td>
+              <td>Plugin instances, hardware drivers</td>
+            </tr>
+            <tr>
+              <td><code>shared_ptr&lt;T&gt;</code></td>
+              <td>Shared (ref-counted)</td>
+              <td>Yes</td>
+              <td>Yes</td>
+              <td>Nodes, message data, callback groups</td>
+            </tr>
+            <tr>
+              <td><code>weak_ptr&lt;T&gt;</code></td>
+              <td>Non-owning observer</td>
+              <td>Yes</td>
+              <td>Yes</td>
+              <td>Lifecycle node parent refs in plugins</td>
+            </tr>
+            <tr>
+              <td>raw <code>T*</code></td>
+              <td>Unspecified</td>
+              <td>Yes</td>
+              <td>Yes</td>
+              <td>Avoid — only in C-style APIs</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (rclcpp)</h2>
+
+        <h3>Minimal rclcpp Node</h3>
+        <pre><code class="cpp">// minimal_node.cpp
+#include &lt;rclcpp/rclcpp.hpp&gt;
+
+class MinimalNode : public rclcpp::Node {
+public:
+  // Constructor: pass node name to rclcpp::Node base class
+  MinimalNode() : Node("minimal_node") {
+    RCLCPP_INFO(get_logger(), "MinimalNode started");
+  }
+};
+
+int main(int argc, char** argv) {
+  rclcpp::init(argc, argv);
+
+  // Create node wrapped in shared_ptr (required by rclcpp)
+  auto node = std::make_shared&lt;MinimalNode&gt;();
+
+  // Spin — process callbacks until shutdown
+  rclcpp::spin(____);  // node
+
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+
+        <h3>Publisher Node (C++)</h3>
+        <pre><code class="cpp">// talker.cpp
+#include &lt;rclcpp/rclcpp.hpp&gt;
+#include &lt;std_msgs/msg/string.hpp&gt;
+#include &lt;chrono&gt;
+
+using namespace std::chrono_literals;
+
+class Talker : public rclcpp::Node {
+public:
+  Talker() : Node("talker"), count_(0) {
+    // Create publisher: topic "/chatter", queue depth 10
+    publisher_ = create_publisher&lt;std_msgs::msg::String&gt;(
+        "____", 10);  // "/chatter"
+
+    // Create timer: fires every 500 ms
+    timer_ = create_wall_timer(
+        500ms,
+        std::bind(&amp;Talker::timer_callback, this));
+  }
+
+private:
+  void timer_callback() {
+    auto msg = std_msgs::msg::String();
+    msg.data = "Hello ROS2: " + std::to_string(count_++);
+    RCLCPP_INFO(get_logger(), "Publishing: '%s'", msg.data.c_str());
+    publisher_-&gt;publish(msg);
+  }
+
+  // Member variables — stored in the class (outlive callbacks)
+  rclcpp::Publisher&lt;std_msgs::msg::String&gt;::SharedPtr publisher_;
+  rclcpp::TimerBase::SharedPtr timer_;
+  size_t count_;
+};
+
+int main(int argc, char** argv) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared&lt;Talker&gt;());
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+
+        <h3>Subscriber Node (C++)</h3>
+        <pre><code class="cpp">// listener.cpp
+#include &lt;rclcpp/rclcpp.hpp&gt;
+#include &lt;std_msgs/msg/string.hpp&gt;
+
+class Listener : public rclcpp::Node {
+public:
+  Listener() : Node("listener") {
+    // Create subscription: topic "/chatter", queue depth 10
+    subscription_ = create_subscription&lt;std_msgs::msg::String&gt;(
+        "/chatter",
+        10,
+        std::bind(&amp;Listener::topic_callback, this, std::placeholders::_1));
+  }
+
+private:
+  // Callback receives a const shared_ptr to the message
+  void topic_callback(
+      const std_msgs::msg::String::SharedPtr msg) const {
+    RCLCPP_INFO(get_logger(), "I heard: '%s'", msg-&gt;data.c_str());
+  }
+
+  rclcpp::Subscription&lt;std_msgs::msg::String&gt;::SharedPtr subscription_;
+};
+
+int main(int argc, char** argv) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared&lt;____&gt;());  // Listener
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+
+        <h3>Publisher + Subscriber in One Node</h3>
+        <pre><code class="cpp">// relay.cpp — subscribes to /input, republishes to /output
+#include &lt;rclcpp/rclcpp.hpp&gt;
+#include &lt;std_msgs/msg/float64.hpp&gt;
+
+class Relay : public rclcpp::Node {
+public:
+  Relay() : Node("relay") {
+    sub_ = create_subscription&lt;std_msgs::msg::Float64&gt;(
+        "/input", 10,
+        [this](const std_msgs::msg::Float64::SharedPtr msg) {
+          // Lambda callback (alternative to std::bind)
+          auto out = std_msgs::msg::Float64();
+          out.data = msg-&gt;data * 2.0;  // Double the value
+          pub_-&gt;publish(out);
+          RCLCPP_DEBUG(get_logger(),
+            "Relayed %.3f → %.3f", msg-&gt;data, out.data);
+        });
+
+    pub_ = create_publisher&lt;std_msgs::msg::Float64&gt;(
+        "/output", ____);  // 10 (queue depth)
+  }
+
+private:
+  rclcpp::Subscription&lt;std_msgs::msg::Float64&gt;::SharedPtr sub_;
+  rclcpp::Publisher&lt;std_msgs::msg::Float64&gt;::SharedPtr pub_;
+};
+
+int main(int argc, char** argv) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared&lt;Relay&gt;());
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+
+        <h3>CMakeLists.txt for rclcpp Node</h3>
+        <pre><code class="cmake">cmake_minimum_required(VERSION 3.8)
+project(my_robot_cpp)
+
+# Use C++17 (required by ROS2 Humble+)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+
+# Build talker executable
+add_executable(talker src/talker.cpp)
+ament_target_dependencies(talker
+  rclcpp
+  ____)  # std_msgs
+
+# Build listener executable
+add_executable(listener src/listener.cpp)
+ament_target_dependencies(listener rclcpp std_msgs)
+
+install(TARGETS talker listener
+  DESTINATION lib/${PROJECT_NAME})
+
+ament_package()</code></pre>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>Declaring &amp; Reading Parameters in C++</h3>
+        <pre><code class="cpp">// param_node.cpp
+#include &lt;rclcpp/rclcpp.hpp&gt;
+
+class ParamNode : public rclcpp::Node {
+public:
+  ParamNode() : Node("param_node") {
+    // Declare parameters with defaults
+    declare_parameter("max_speed", 1.0);
+    declare_parameter("robot_name", std::string("turtlebot"));
+    declare_parameter("enable_debug", false);
+
+    // Read parameter values
+    double max_speed = get_parameter("max_speed").as_double();
+    std::string name = get_parameter("____").as_string();  // robot_name
+    bool debug = get_parameter("enable_debug").as_bool();
+
+    RCLCPP_INFO(get_logger(),
+      "max_speed=%.1f, robot=%s, debug=%s",
+      max_speed, name.c_str(), debug ? "true" : "false");
+
+    // Register callback for parameter changes at runtime
+    param_callback_handle_ = add_on_set_parameters_callback(
+        [this](const std::vector&lt;rclcpp::Parameter&gt;&amp; params) {
+          rcl_interfaces::msg::SetParametersResult result;
+          result.successful = true;
+          for (const auto&amp; p : params) {
+            RCLCPP_INFO(get_logger(),
+              "Parameter changed: %s", p.get_name().c_str());
+          }
+          return result;
+        });
+  }
+
+private:
+  OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
+};</code></pre>
+
+        <h3>Executor Types — Single vs Multi-Threaded</h3>
+        <pre><code class="cpp">// single_threaded.cpp — all callbacks on one thread
+rclcpp::spin(std::make_shared&lt;MyNode&gt;());
+
+// multi_threaded.cpp — parallel callback execution
+#include &lt;rclcpp/rclcpp.hpp&gt;
+
+int main(int argc, char** argv) {
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared&lt;MyNode&gt;();
+
+  // MultiThreadedExecutor: runs callbacks in parallel
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(node);
+  executor.spin();
+
+  rclcpp::shutdown();
+  return 0;
+}
+
+// CallbackGroup — control which callbacks can run concurrently
+// In node constructor:
+auto cb_group = create_callback_group(
+    rclcpp::CallbackGroupType::____);  // MutuallyExclusive or Reentrant
+
+rclcpp::SubscriptionOptions sub_opts;
+sub_opts.callback_group = cb_group;
+sub_ = create_subscription&lt;std_msgs::msg::String&gt;(
+    "/topic", 10, callback, sub_opts);</code></pre>
+
+        <h3>Inheritance Pattern — Extend Existing Node</h3>
+        <pre><code class="cpp">// custom_controller.hpp
+// Extend an existing Nav2 controller interface
+#include &lt;nav2_core/controller.hpp&gt;
+
+namespace my_controller {
+
+class MyController : public nav2_core::Controller {
+public:
+  // Called once when plugin loads
+  void configure(
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr&amp; parent,
+    std::string name,
+    std::shared_ptr&lt;tf2_ros::Buffer&gt; tf,
+    std::shared_ptr&lt;nav2_costmap_2d::Costmap2DROS&gt; costmap_ros) override;
+
+  // Called each control cycle (~10-20 Hz)
+  geometry_msgs::msg::TwistStamped computeVelocityCommands(
+    const geometry_msgs::msg::PoseStamped&amp; pose,
+    const geometry_msgs::msg::Twist&amp; speed,
+    nav2_core::GoalChecker* goal_checker) override;
+
+  void cleanup() override {}
+  void activate() override {}
+  void deactivate() override {}
+  void setPlan(const nav_msgs::msg::Path&amp; path) override {
+    path_ = ____;  // path (store for use in computeVelocityCommands)
+  }
+
+private:
+  nav_msgs::msg::Path path_;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+};
+
+}  // namespace my_controller
+
+// Register as plugin (at bottom of .cpp file)
+#include &lt;pluginlib/class_list_macros.hpp&gt;
+PLUGINLIB_EXPORT_CLASS(my_controller::MyController, nav2_core::Controller)</code></pre>
+
+        <h3>rclcpp Logger Levels</h3>
+        <pre><code class="cpp">// Five levels — only messages &gt;= active level are printed
+RCLCPP_DEBUG(get_logger(), "Detailed trace: x=%.3f", x);  // Lowest
+RCLCPP_INFO(get_logger(), "Normal operation message");
+RCLCPP_WARN(get_logger(), "Unexpected but handled condition");
+RCLCPP_ERROR(get_logger(), "Error — operation failed: %s", err.c_str());
+RCLCPP_FATAL(get_logger(), "Unrecoverable error — shutting down");  // Highest
+
+// One-shot logging (avoids spam in tight loops)
+RCLCPP_INFO_ONCE(get_logger(), "This prints only the first time");
+RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000,
+    "____");  // Prints max once per 1000 ms</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Build &amp; Run</h3>
+        <pre><code class="bash"># Build specific package
+colcon build --packages-select my_robot_cpp
+
+# Source workspace
+source install/setup.bash
+
+# Run talker in one terminal
+ros2 run my_robot_cpp talker
+
+# Run listener in another terminal
+ros2 run my_robot_cpp listener
+
+# Verify topic activity
+ros2 topic echo /chatter
+ros2 topic hz /chatter   # Should show ~2.0 Hz (500 ms timer)
+ros2 topic info /chatter # Shows publisher/subscriber count</code></pre>
+
+        <h3>Debug Node Info</h3>
+        <pre><code class="bash"># Show all info about a running node
+ros2 node info /talker
+# Output:
+#   Subscribers: (none)
+#   Publishers:  /chatter [std_msgs/msg/String]
+#   Services:    /talker/describe_parameters
+#                /talker/get_parameters
+#                /talker/set_parameters
+
+# Check parameter values
+ros2 param list /param_node
+ros2 param get /param_node max_speed
+
+# Change parameter at runtime
+ros2 param set /param_node max_speed ____  # 2.5
+
+# Inspect memory use of node process
+ros2 run my_robot_cpp talker &amp;
+top -p $(pgrep talker)  # Check RSS (resident set size)</code></pre>
+
+        <h3>Unit Test — gtest with rclcpp</h3>
+        <pre><code class="cpp">// test/test_relay.cpp
+#include &lt;gtest/gtest.h&gt;
+#include &lt;rclcpp/rclcpp.hpp&gt;
+#include &lt;std_msgs/msg/float64.hpp&gt;
+#include "relay.hpp"
+
+class TestRelay : public ::testing::Test {
+protected:
+  void SetUp() override {
+    rclcpp::init(0, nullptr);
+    node_ = std::make_shared&lt;Relay&gt;();
+  }
+  void TearDown() override { rclcpp::shutdown(); }
+  std::shared_ptr&lt;Relay&gt; node_;
+};
+
+TEST_F(TestRelay, NodeCreated) {
+  EXPECT_EQ(node_-&gt;get_name(), std::string("____"));  // "relay"
+}
+
+// CMakeLists.txt — add test target
+// if(BUILD_TESTING)
+//   find_package(ament_cmake_gtest REQUIRED)
+//   ament_add_gtest(test_relay test/test_relay.cpp)
+//   ament_target_dependencies(test_relay rclcpp std_msgs)
+// endif()</code></pre>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Segfault — Using Deleted shared_ptr</h3>
+        <p><strong>Symptom:</strong> Node crashes with segfault; backtrace shows use-after-free.</p>
+        <p><strong>Root Cause:</strong> Captured <code>this</code> raw pointer in lambda outlives the node.</p>
+        <p><strong>Fix:</strong> Capture <code>shared_from_this()</code> inside callbacks instead of raw <code>this</code>:</p>
+        <pre><code class="cpp">// BAD — raw 'this' might dangle if node destroyed before timer fires
+timer_ = create_wall_timer(1s,
+    [this]() { /* use this */ });
+
+// GOOD — shared ownership; timer callback keeps node alive
+timer_ = create_wall_timer(1s,
+    [node = ____()]() {  // shared_from_this()
+      node-&gt;do_something();
+    });</code></pre>
+
+        <h3>Failure 2: "Cannot publish on a non-active publisher"</h3>
+        <p><strong>Symptom:</strong> Publisher throws exception; no messages appear.</p>
+        <p><strong>Root Cause:</strong> Publisher created before <code>rclcpp::init()</code> or after <code>rclcpp::shutdown()</code>.</p>
+        <p><strong>Fix:</strong> Always create publishers inside the Node constructor (after <code>rclcpp::init()</code>), never globally:</p>
+        <pre><code class="cpp">// BAD — global publisher (created before rclcpp::init)
+auto pub = rclcpp::create_publisher&lt;std_msgs::msg::String&gt;(...);  // CRASH
+
+// GOOD — publisher created in Node constructor body
+class MyNode : public rclcpp::Node {
+public:
+  MyNode() : Node("my_node") {
+    pub_ = create_publisher&lt;std_msgs::msg::String&gt;("/topic", ____);  // 10
+  }
+private:
+  rclcpp::Publisher&lt;std_msgs::msg::String&gt;::SharedPtr pub_;
+};</code></pre>
+
+        <h3>Failure 3: Callbacks Never Fire</h3>
+        <p><strong>Symptom:</strong> Subscriber created, messages published, but callback never called.</p>
+        <p><strong>Root Cause:</strong> Forgot to spin — without a spin call, no callbacks execute.</p>
+        <p><strong>Fix:</strong> Always spin the executor after creating the node:</p>
+        <pre><code class="cpp">// Missing spin — subscriber never receives anything
+auto node = std::make_shared&lt;Listener&gt;();
+// Bug: no rclcpp::spin() call → callbacks never invoked
+
+// Fixed:
+auto node = std::make_shared&lt;Listener&gt;();
+rclcpp::spin(____);  // node — blocks until shutdown</code></pre>
+
+        <h3>Failure 4: Memory Leak — Circular shared_ptr</h3>
+        <p><strong>Symptom:</strong> Memory grows over time; valgrind shows unreachable blocks.</p>
+        <p><strong>Root Cause:</strong> Two objects hold <code>shared_ptr</code> to each other — ref count never reaches 0.</p>
+        <p><strong>Fix:</strong> Break the cycle with <code>weak_ptr</code>:</p>
+        <pre><code class="cpp">struct Parent;
+struct Child {
+  std::weak_ptr&lt;Parent&gt; parent_;  // GOOD: weak, not shared
+};
+struct Parent {
+  std::shared_ptr&lt;Child&gt; child_;  // owns child
+
+  // BAD version would have child holding shared_ptr&lt;Parent&gt;
+  // → circular reference → memory leak
+};
+
+auto p = std::make_shared&lt;Parent&gt;();
+auto c = std::make_shared&lt;Child&gt;();
+c-&gt;parent_ = ____;  // p (assign weak_ptr — does not bump ref count)
+p-&gt;child_ = c;</code></pre>
+
+        <h3>Failure 5: "undefined reference to vtable for MyClass"</h3>
+        <p><strong>Symptom:</strong> Linker error during <code>colcon build</code>.</p>
+        <p><strong>Root Cause:</strong> Declared a pure virtual function but didn't implement the virtual destructor in the .cpp.</p>
+        <p><strong>Fix:</strong> Define virtual destructor (even if empty) in exactly one .cpp file:</p>
+        <pre><code class="cpp">// sensor_base.cpp
+#include "sensor_base.hpp"
+
+// Even an empty destructor body anchors the vtable to this TU
+SensorBase::~SensorBase() = ____;  // default</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Observe Dangling Pointer Crash</h3>
+        <p>Deliberately capture a raw <code>this</code> in a delayed callback:</p>
+
+        <pre><code class="cpp">// dangling_this.cpp — intentional bug
+#include &lt;rclcpp/rclcpp.hpp&gt;
+#include &lt;chrono&gt;
+using namespace std::chrono_literals;
+
+class BadNode : public rclcpp::Node {
+public:
+  BadNode() : Node("bad_node") {
+    // Capture raw 'this' — dangerous if node destroyed before timer fires
+    timer_ = create_wall_timer(5s, [this]() {
+      RCLCPP_INFO(get_logger(), "Timer fired");
+    });
+  }
+  rclcpp::TimerBase::SharedPtr timer_;
+};
+
+int main(int argc, char** argv) {
+  rclcpp::init(argc, argv);
+  {
+    auto node = std::make_shared&lt;BadNode&gt;();
+    rclcpp::executors::SingleThreadedExecutor exec;
+    exec.add_node(node);
+    // Node destroyed when block exits, but timer still pending
+  }  // node ref count → 0 → destroyed
+  // Timer fires → accesses destroyed node → undefined behaviour!
+  rclcpp::shutdown();
+}</code></pre>
+
+        <p><strong>Observe:</strong></p>
+        <ul>
+          <li>Segfault or silent corruption</li>
+          <li>Address sanitizer output: <code>heap-use-after-free</code></li>
+          <li>valgrind: <code>Invalid read of size 8</code></li>
+        </ul>
+
+        <p><strong>Fix it:</strong></p>
+        <pre><code class="cpp">// FIXED — shared_from_this() keeps node alive
+timer_ = create_wall_timer(5s,
+    [weak = std::weak_ptr&lt;BadNode&gt;(shared_from_this())]() {
+      if (auto node = weak.lock()) {
+        RCLCPP_INFO(node-&gt;get_logger(), "Timer fired safely");
+      }
+      // If node destroyed, weak.lock() returns nullptr — no crash
+    });</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Build with <code>-fsanitize=address,undefined</code> during development. In CMakeLists.txt: <code>add_compile_options(-fsanitize=address -g)</code> and <code>add_link_options(-fsanitize=address)</code>. ASan catches use-after-free bugs immediately instead of causing mysterious crashes later.</p>
+        </div>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>Never use <code>std::bind(&amp;MyClass::callback, this, ...)</code> in a long-lived timer if there is any chance the node can be destroyed before the timer fires. Prefer lambda with <code>shared_from_this()</code> or <code>weak_ptr</code> capture.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Deepen C++ robotics skills with these challenges:</p>
+
+        <ol>
+          <li>Write a complete C++ lifecycle node (<code>rclcpp_lifecycle::LifecycleNode</code>) with configure/activate/deactivate/cleanup transitions</li>
+          <li>Implement a custom Nav2 controller plugin in C++ — inherit from <code>nav2_core::Controller</code> and register with pluginlib</li>
+          <li>Create a templated sensor driver class that works with <code>sensor_msgs::msg::LaserScan</code>, <code>PointCloud2</code>, and <code>Imu</code></li>
+          <li>Profile rclcpp callback latency using <code>rclcpp::Clock</code> timestamps; compare single-threaded vs multi-threaded executor</li>
+          <li>Write a component node (<code>rclcpp_components</code>) and load it dynamically via <code>ros2 component load</code></li>
+          <li>Implement a ROS2 service server in C++ using a custom .srv file and test it with a C++ client</li>
+          <li>Use <code>std::variant</code> and <code>std::visit</code> to handle multiple message types in a single callback dispatcher</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="pubsub.html">Publish/Subscribe</a> - Apply C++ patterns with real ROS2 messages</li>
+          <li><a href="moveit2.html">MoveIt2 Deep Dive</a> - Use C++ OOP with MoveGroupInterface</li>
+          <li><a href="lifecycle.html">Lifecycle Nodes</a> - Advanced C++ node state management</li>
+          <li><a href="build.html">Build System</a> - CMake setup for rclcpp packages</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>rclcpp API docs: <code>docs.ros2.org/humble/api/rclcpp/</code></p>
+          <p>ROS2 C++ tutorials: <code>docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Writing-A-Simple-Cpp-Publisher-And-Subscriber.html</code></p>
+          <p>C++17 reference: <code>en.cppreference.com</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="moveit2.html" class="prev">MoveIt2 Deep Dive</a>
+        <a href="pubsub.html" class="next">Publish/Subscribe</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script src="../js/pwa.js" defer></script>
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    // Only close if clicking the overlay directly, not sidebar elements
+    sidebarOverlay.addEventListener('click', (event) => {
+      if (event.target === sidebarOverlay && window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+
+    // Dropdown menu toggle for sidebar sections
+    const sidebarHeadings = sidebar.querySelectorAll('h2');
+    sidebarHeadings.forEach(heading => {
+      heading.addEventListener('click', () => {
+        heading.classList.toggle('collapsed');
+      });
+      // Expand all by default on desktop
+      if (window.innerWidth > 968) {
+        heading.classList.remove('collapsed');
+      }
+    });
+
+    // Handle dropdown state on resize
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 968) {
+        // Desktop: expand all sections
+        sidebarHeadings.forEach(h => h.classList.remove('collapsed'));
+      }
+    });
+  </script>
+</body>
+</html>
