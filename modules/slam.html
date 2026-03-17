@@ -610,8 +610,9 @@ correlation_search_space_smear_deviation: 0.2  # More tolerance</code></pre>
     menuToggle.addEventListener('click', toggleSidebar);
 
     // Close sidebar when clicking overlay (mobile only)
-    sidebarOverlay.addEventListener('click', () => {
-      if (window.innerWidth <= 968) {
+    // Only close if clicking the overlay directly, not sidebar elements
+    sidebarOverlay.addEventListener('click', (event) => {
+      if (event.target === sidebarOverlay && window.innerWidth <= 968) {
         toggleSidebar();
       }
     });
@@ -645,6 +646,26 @@ correlation_search_space_smear_deviation: 0.2  # More tolerance</code></pre>
           document.body.style.overflow = '';
         }
       }, 100);
+    });
+
+    // Dropdown menu toggle for sidebar sections
+    const sidebarHeadings = sidebar.querySelectorAll('h2');
+    sidebarHeadings.forEach(heading => {
+      heading.addEventListener('click', () => {
+        heading.classList.toggle('collapsed');
+      });
+      // Expand all by default on desktop
+      if (window.innerWidth > 968) {
+        heading.classList.remove('collapsed');
+      }
+    });
+
+    // Handle dropdown state on resize
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 968) {
+        // Desktop: expand all sections
+        sidebarHeadings.forEach(h => h.classList.remove('collapsed'));
+      }
     });
   </script>
 </body>
