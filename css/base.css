@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
 :root {
   --bg: #0b1220;
   --bg-soft: #111a2b;
@@ -853,5 +855,491 @@ th {
 
   .bubble {
     display: none !important;
+  }
+}
+
+/* ==========================================================
+   Pixel Art Spider Theme Override Layer
+   Preserves existing HTML structure and behavior; overrides style only.
+   ========================================================== */
+
+:root {
+  --bg: #0a0d1a;
+  --bg-soft: #11162b;
+  --surface: #10162e;
+  --surface-2: #131a36;
+  --border: #1f4ed8;
+  --text: #f5f7ff;
+  --muted: #d7ddff;
+  --brand: #e11d2f;
+  --brand-2: #1f4ed8;
+  --ok: #e11d2f;
+  --warn: #1f4ed8;
+  --danger: #e11d2f;
+  --shadow: none;
+  --radius: 0px;
+}
+
+html {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  scroll-behavior: auto;
+}
+
+body {
+  font-family: "VT323", "Press Start 2P", "Cascadia Code", Consolas, monospace;
+  font-size: 18px;
+  color: var(--text);
+  background-color: var(--bg);
+  background-image:
+    repeating-linear-gradient(0deg, #0a0d1a 0 10px, #11162b 10px 20px),
+    repeating-linear-gradient(90deg, #0a0d1a 0 10px, #11162b 10px 20px),
+    radial-gradient(circle at 15% 15%, #1f4ed8 0 2px, transparent 2px),
+    radial-gradient(circle at 85% 25%, #e11d2f 0 2px, transparent 2px);
+  background-size: 20px 20px, 20px 20px, 60px 60px, 60px 60px;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(90deg, #e11d2f 0 50%, #1f4ed8 50% 100%);
+  z-index: 9999;
+  pointer-events: none;
+  animation: animeWipeX 650ms steps(14, end) forwards;
+}
+
+@keyframes animeWipeX {
+  from { clip-path: inset(0 0 0 0); }
+  to { clip-path: inset(0 0 0 100%); }
+}
+
+@keyframes animeWipeY {
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+*, *::before, *::after {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--text);
+}
+
+.bubble {
+  display: none !important;
+}
+
+.site-header,
+.sidebar,
+.main-content,
+section,
+.hero-section,
+.card,
+.module-node,
+.training-step,
+.callout,
+.breadcrumb,
+.menu-toggle,
+.site-footer,
+.pager a,
+pre,
+table,
+tr,
+th,
+td,
+.pill,
+.graph-column-title,
+.sidebar h2,
+.sidebar a,
+code,
+kbd {
+  color: var(--text) !important;
+  border-style: solid !important;
+}
+
+.site-header,
+.sidebar,
+section,
+.hero-section,
+.card,
+.module-node,
+.training-step,
+.callout,
+.menu-toggle,
+.site-footer,
+.pager a,
+pre,
+table,
+.pill,
+.breadcrumb,
+th,
+td {
+  border-width: 3px !important;
+  border-color: var(--border) !important;
+}
+
+.site-header,
+.sidebar,
+section,
+.hero-section,
+.card,
+.training-step,
+.callout,
+.site-footer,
+pre,
+table,
+th,
+td {
+  background-color: var(--surface) !important;
+  background-image: repeating-linear-gradient(45deg, #10162e 0 6px, #131a36 6px 12px) !important;
+}
+
+.module-node,
+.menu-toggle,
+.pager a,
+.pill,
+.breadcrumb,
+code,
+kbd,
+.sidebar a {
+  background-color: #0b1124 !important;
+  background-image: repeating-linear-gradient(90deg, #0b1124 0 8px, #11162b 8px 16px) !important;
+}
+
+section,
+.hero-section,
+.card,
+.module-node,
+.training-step,
+.callout,
+table,
+pre,
+.site-header,
+.sidebar {
+  animation: animeWipeY 440ms steps(9, end) both;
+}
+
+h1, h2, h3, h4, .node-title, .step-title, .graph-column-title {
+  font-family: "Press Start 2P", "VT323", monospace;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+}
+
+h1 { font-size: clamp(1.15rem, 2.1vw, 1.65rem); }
+h2 { font-size: clamp(0.98rem, 1.75vw, 1.28rem); }
+h3, h4 { font-size: clamp(0.9rem, 1.55vw, 1.1rem); }
+
+p, li, .node-desc, .page-outcome, .tagline, .step-desc, td, th, a {
+  font-family: "VT323", "Press Start 2P", monospace;
+  font-size: 0.9em;
+  color: var(--muted) !important;
+}
+
+.main-content {
+  padding-top: 0.9rem !important;
+  padding-bottom: 1.6rem !important;
+}
+
+section,
+.hero-section {
+  margin-bottom: 0.75rem !important;
+  padding: 0.7rem 0.75rem !important;
+}
+
+.hero-title,
+.page-title {
+  margin-bottom: 0.35rem !important;
+}
+
+.hero-subtitle,
+.page-outcome {
+  margin-bottom: 0.55rem !important;
+}
+
+.graph-container {
+  gap: 0.45rem !important;
+}
+
+.graph-column {
+  gap: 0.4rem !important;
+}
+
+.module-node {
+  min-height: 76px !important;
+  padding: 0.48rem 0.5rem !important;
+}
+
+.node-icon {
+  font-size: 1rem !important;
+  margin-bottom: 0.15rem !important;
+}
+
+.node-title {
+  font-size: 0.86rem !important;
+  line-height: 1.15 !important;
+  margin-bottom: 0.08rem !important;
+}
+
+.node-desc {
+  font-size: 0.72rem !important;
+  line-height: 1.1 !important;
+}
+
+.site-header {
+  min-height: 72px !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.45rem !important;
+}
+
+.site-header h1 {
+  font-size: clamp(0.95rem, 1.5vw, 1.2rem) !important;
+}
+
+.tagline {
+  font-size: 0.74rem !important;
+}
+
+a,
+button,
+.card,
+.module-node,
+.sidebar,
+.sidebar-overlay,
+.menu-toggle span,
+.sidebar ul,
+.sidebar h2::before,
+.pill,
+.pager a,
+.training-step,
+.step-number {
+  transition-property: color, background-color, border-color, transform, opacity, clip-path;
+  transition-duration: 180ms;
+  transition-timing-function: steps(4, end);
+}
+
+a:hover,
+a:focus-visible,
+button:hover,
+button:focus-visible,
+.sidebar a:hover,
+.sidebar a:focus-visible,
+.sidebar a.active,
+.menu-toggle:hover,
+.menu-toggle:focus-visible,
+.pager a:hover,
+.pager a:focus-visible,
+.card:hover,
+.module-node:hover,
+.module-node:focus-visible,
+.pill:hover,
+.training-step:hover {
+  background-color: var(--brand) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.menu-toggle span,
+.sidebar h2::before {
+  background: var(--brand) !important;
+  color: var(--brand) !important;
+}
+
+.sidebar a.active {
+  box-shadow: inset 0 0 0 2px #ffffff !important;
+}
+
+.sidebar-overlay {
+  background: #0a0d1a !important;
+  opacity: 0;
+}
+
+.sidebar-overlay.active {
+  opacity: 0.92;
+}
+
+.checklist li {
+  border-bottom: 2px solid var(--border);
+}
+
+.checklist li::before {
+  color: var(--brand) !important;
+}
+
+.graph-column-title {
+  color: #ffffff !important;
+  border-bottom: 3px solid var(--brand);
+  padding-bottom: 0.4rem;
+}
+
+/* Workflow redesign (same content, different visual system) */
+.training-loop {
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 0.55rem;
+  align-items: stretch;
+}
+
+.training-step {
+  position: relative;
+  border: 3px solid var(--border);
+  padding: 0.55rem 0.5rem 0.5rem;
+  min-height: 116px;
+}
+
+.training-step::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -0.95rem;
+  width: 0.8rem;
+  height: 3px;
+  background: var(--brand);
+}
+
+.training-step:last-child::after {
+  display: none;
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid #ffffff;
+  background: var(--brand);
+  color: #ffffff;
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.52rem;
+  margin-bottom: 0.45rem;
+}
+
+.step-title {
+  color: #ffffff !important;
+}
+
+.step-desc {
+  color: var(--muted) !important;
+}
+
+.card-grid .card {
+  border-color: var(--brand) !important;
+}
+
+.module-node.core { border-color: #1f4ed8 !important; }
+.module-node.model { border-color: #e11d2f !important; }
+.module-node.nav { border-color: #ffffff !important; }
+.module-node.ops { border-color: #1f4ed8 !important; }
+
+/* Keep code rendering in developer monospace (no pixel-font override) */
+pre,
+code,
+kbd,
+samp,
+tt,
+pre code,
+td code,
+li code,
+p code {
+  font-family: "Cascadia Code", Consolas, Monaco, "Courier New", monospace !important;
+  font-style: normal !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.45 !important;
+  text-transform: none !important;
+  font-variant-ligatures: none;
+}
+
+pre {
+  font-size: 0.82rem !important;
+}
+
+code,
+kbd,
+samp,
+tt {
+  font-size: 0.88em !important;
+}
+
+img,
+picture img,
+video,
+canvas,
+svg {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: contrast(120%) saturate(110%);
+}
+
+@media (max-width: 968px) {
+  .training-loop {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .graph-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .training-step:nth-child(2n)::after {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 16px;
+    letter-spacing: 0.01em;
+  }
+
+  .graph-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .training-loop {
+    grid-template-columns: 1fr;
+  }
+
+  .training-step::after {
+    top: auto;
+    bottom: -0.9rem;
+    right: 50%;
+    width: 3px;
+    height: 0.8rem;
+    transform: translateX(50%);
+  }
+}
+
+@media (max-width: 420px) {
+  .graph-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none !important;
+    clip-path: inset(0 0 0 100%);
+  }
+
+  section,
+  .hero-section,
+  .card,
+  .module-node,
+  .training-step,
+  .callout,
+  table,
+  pre,
+  .site-header,
+  .sidebar {
+    animation: none !important;
   }
 }
