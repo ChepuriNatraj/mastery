@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0d1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>MoveIt2 OMPL Planners - ROS2 Mastery Dojo</title>
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>MoveIt2</h2>
+      <ul>
+        <li><a href="moveit2.html">MoveIt2 Deep Dive</a></li>
+        <li><a href="moveit2_ompl.html" class="active">OMPL Planners</a></li>
+        <li><a href="moveit2_ik.html">IK Solvers (KDL vs TRAC-IK)</a></li>
+        <li><a href="moveit2_cartesian.html">Cartesian Path Planning</a></li>
+        <li><a href="moveit2_grasping.html">Grasping & Gripper Basics</a></li>
+      </ul>
+
+      <h2>C++ for Robotics</h2>
+      <ul>
+        <li><a href="cpp_robotics.html">C++ for Robotics</a></li>
+        <li><a href="cpp_oop.html">OOP in C++</a></li>
+        <li><a href="cpp_memory.html">Pointers & Memory</a></li>
+        <li><a href="cpp_rclcpp.html">rclcpp Essentials</a></li>
+        <li><a href="cpp_nodes_pubsub.html">Custom Nodes + Pub/Sub</a></li>
+        <li><a href="cpp_smart_pointers.html">Smart Pointers</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb"><a href="../index.html">Home</a> &gt; <a href="moveit2.html">MoveIt2</a> &gt; OMPL Planners</nav>
+      <h1 class="page-title">OMPL Planners: RRT vs PRM</h1>
+      <p class="page-outcome">Understand exactly what RRT and PRM do in MoveIt2, and pick the right planner based on query pattern, speed, and path quality needs.</p>
+
+      <section>
+        <h2>What / Why / When</h2>
+        <h3>What</h3>
+        <p>OMPL is MoveIt2’s planner backend. It uses sampling-based planning in high-dimensional joint space. <strong>RRT</strong> family planners grow trees from start (and goal for bidirectional variants). <strong>PRM</strong> family planners build a reusable roadmap graph and query shortest paths on it.</p>
+        <h3>Why</h3>
+        <p>Manipulators have 6+ DOF and nonlinear constraints. Grid planners explode combinatorially. Sampling-based methods are practical and robust in these spaces.</p>
+        <h3>When</h3>
+        <p>Use <code>RRTConnect</code> for fast one-shot goals, <code>PRM</code> for repeated queries in static scenes, and <code>RRT*</code>/<code>PRM*</code> when path optimality matters more than speed.</p>
+      </section>
+
+      <section>
+        <h2>Planner Selection Cheatsheet</h2>
+        <table>
+          <thead><tr><th>Scenario</th><th>Best Planner</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>Single pick target now</td><td><code>RRTConnect</code></td><td>Fastest first solution</td></tr>
+            <tr><td>Many repeated goals in same cell</td><td><code>PRM</code></td><td>Roadmap amortizes cost</td></tr>
+            <tr><td>Need shorter/smoother path</td><td><code>RRT*</code> / <code>PRM*</code></td><td>Asymptotically optimal</td></tr>
+            <tr><td>Tight clutter / narrow passage</td><td><code>EST</code> / <code>BKPIECE</code></td><td>Better exploratory bias</td></tr>
+          </tbody>
+        </table>
+
+        <h3>10-Minute Drill</h3>
+        <pre><code class="yaml"># ompl_planning.yaml
+planner_configs:
+  RRTConnectkConfigDefault:
+    type: geometric::RRTConnect
+    range: 0.0
+  PRMkConfigDefault:
+    type: geometric::PRM
+    max_nearest_neighbors: 10
+
+arm:
+  default_planner_config: ____  # RRTConnectkConfigDefault
+  planner_configs:
+    - RRTConnectkConfigDefault
+    - PRMkConfigDefault</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code</h2>
+        <pre><code class="cpp">moveit::planning_interface::MoveGroupInterface move_group(node, "arm");
+move_group.setPlannerId("RRTConnectkConfigDefault");
+move_group.setPlanningTime(2.0);
+
+moveit::planning_interface::MoveGroupInterface::Plan plan;
+auto ok = move_group.plan(plan) == moveit::core::MoveItErrorCode::SUCCESS;
+if (ok) {
+  move_group.execute(plan);
+}
+
+// Switch planner for repeated-cell benchmarking
+move_group.setPlannerId(____); // "PRMkConfigDefault"</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+        <pre><code class="bash">ros2 param get /move_group planning_pipelines
+ros2 topic echo /move_group/display_planned_path --once
+ros2 run moveit_ros_benchmarks moveit_run_benchmark</code></pre>
+      </section>
+
+      <div class="pager">
+        <a href="moveit2.html" class="prev">MoveIt2 Deep Dive</a>
+        <a href="moveit2_ik.html" class="next">IK Solvers</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer"><p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p></footer>
+  <script src="../js/pwa.js" defer></script>
+  <script>
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    function initSidebar(){ if(window.innerWidth>968){ sidebar.classList.add('active'); menuToggle.classList.add('active'); } }
+    function toggleSidebar(){ const isActive=sidebar.classList.toggle('active'); menuToggle.classList.toggle('active'); if(window.innerWidth<=968){ sidebarOverlay.classList.toggle('active'); document.body.style.overflow=isActive?'hidden':''; } }
+    initSidebar(); menuToggle.addEventListener('click', toggleSidebar);
+    sidebarOverlay.addEventListener('click',(event)=>{ if(event.target===sidebarOverlay&&window.innerWidth<=968){ toggleSidebar(); }});
+  </script>
+</body>
+</html>

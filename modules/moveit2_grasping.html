@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0a0d1a"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Grasping & Gripper Basics - ROS2 Mastery Dojo</title>
+<link rel="manifest" href="../manifest.webmanifest"><link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/print.css" media="print"></head>
+<body><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button><div class="sidebar-overlay" id="sidebarOverlay"></div><header class="site-header"><h1>Natraj • ROS2 Mastery Dojo</h1><p class="tagline">One focused hour a day. Real robots, real code, real skills.</p></header>
+<div class="site-wrapper"><nav class="sidebar" id="sidebar"><h2>MoveIt2</h2><ul><li><a href="moveit2.html">MoveIt2 Deep Dive</a></li><li><a href="moveit2_ompl.html">OMPL Planners</a></li><li><a href="moveit2_ik.html">IK Solvers (KDL vs TRAC-IK)</a></li><li><a href="moveit2_cartesian.html">Cartesian Path Planning</a></li><li><a href="moveit2_grasping.html" class="active">Grasping &amp; Gripper Basics</a></li></ul><h2>C++ for Robotics</h2><ul><li><a href="cpp_robotics.html">C++ for Robotics</a></li><li><a href="cpp_oop.html">OOP in C++</a></li><li><a href="cpp_memory.html">Pointers &amp; Memory</a></li><li><a href="cpp_rclcpp.html">rclcpp Essentials</a></li><li><a href="cpp_nodes_pubsub.html">Custom Nodes + Pub/Sub</a></li><li><a href="cpp_smart_pointers.html">Smart Pointers</a></li></ul></nav>
+<main class="main-content"><nav class="breadcrumb"><a href="../index.html">Home</a> &gt; <a href="moveit2.html">MoveIt2</a> &gt; Grasping</nav>
+<h1 class="page-title">Grasping &amp; Gripper Integration Basics</h1><p class="page-outcome">Build a robust pick-place sequence with pre-grasp alignment, gripper control, and planning-scene attach/detach integration.</p>
+<section><h2>Grasp Pipeline</h2><ol><li>Plan to pre-grasp pose.</li><li>Cartesian approach.</li><li>Close gripper action.</li><li>Attach object to tool in planning scene.</li><li>Retreat + transport.</li><li>Place + open gripper + detach object.</li></ol></section>
+<section><h2>10-Minute Drill</h2><pre><code class="cpp">using GripperCommand = control_msgs::action::GripperCommand;
+auto client = rclcpp_action::create_client&lt;GripperCommand&gt;(node, "/gripper_controller/gripper_cmd");
+
+GripperCommand::Goal close_goal;
+close_goal.command.position = ____; // 0.0 fully closed
+close_goal.command.max_effort = 60.0;
+client-&gt;async_send_goal(close_goal);
+
+moveit_msgs::msg::AttachedCollisionObject aco;
+aco.link_name = "tool0";
+aco.object.id = "target_box";
+aco.object.operation = moveit_msgs::msg::CollisionObject::ADD;
+planning_scene_interface.applyAttachedCollisionObject(aco);</code></pre></section>
+<section><h2>Common Failures</h2><ul><li>Slip after close: adjust effort and finger contact geometry.</li><li>Planner still collides with held object: missing attach state.</li><li>Unstable approach: add pre-grasp offset and straighten approach vector.</li></ul></section>
+<div class="pager"><a href="moveit2_cartesian.html" class="prev">Cartesian Path Planning</a><a href="cpp_robotics.html" class="next">C++ for Robotics</a></div></main></div>
+<footer class="site-footer"><p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p></footer>
+<script src="../js/pwa.js" defer></script><script>const menuToggle=document.getElementById('menuToggle');const sidebar=document.getElementById('sidebar');const sidebarOverlay=document.getElementById('sidebarOverlay');function initSidebar(){if(window.innerWidth>968){sidebar.classList.add('active');menuToggle.classList.add('active');}}function toggleSidebar(){const isActive=sidebar.classList.toggle('active');menuToggle.classList.toggle('active');if(window.innerWidth<=968){sidebarOverlay.classList.toggle('active');document.body.style.overflow=isActive?'hidden':'';}}initSidebar();menuToggle.addEventListener('click',toggleSidebar);sidebarOverlay.addEventListener('click',(event)=>{if(event.target===sidebarOverlay&&window.innerWidth<=968){toggleSidebar();}});</script></body></html>

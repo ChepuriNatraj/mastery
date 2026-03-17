@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0a0d1a"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><title>rclcpp Essentials - ROS2 Mastery Dojo</title><link rel="manifest" href="../manifest.webmanifest"><link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/print.css" media="print"></head>
+<body><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button><div class="sidebar-overlay" id="sidebarOverlay"></div><header class="site-header"><h1>Natraj • ROS2 Mastery Dojo</h1><p class="tagline">One focused hour a day. Real robots, real code, real skills.</p></header>
+<div class="site-wrapper"><nav class="sidebar" id="sidebar"><h2>C++ for Robotics</h2><ul><li><a href="cpp_robotics.html">C++ for Robotics</a></li><li><a href="cpp_oop.html">OOP in C++</a></li><li><a href="cpp_memory.html">Pointers &amp; Memory</a></li><li><a href="cpp_rclcpp.html" class="active">rclcpp Essentials</a></li><li><a href="cpp_nodes_pubsub.html">Custom Nodes + Pub/Sub</a></li><li><a href="cpp_smart_pointers.html">Smart Pointers</a></li></ul></nav>
+<main class="main-content"><nav class="breadcrumb"><a href="../index.html">Home</a> &gt; <a href="cpp_robotics.html">C++ for Robotics</a> &gt; rclcpp</nav><h1 class="page-title">rclcpp Essentials</h1><p class="page-outcome">Master node lifecycle, executors, callback patterns, params, and logging in ROS2 C++.</p>
+<section><h2>Minimal Node Pattern</h2><pre><code class="cpp">class MinimalNode : public rclcpp::Node {
+public:
+  MinimalNode() : Node("minimal_node") {}
+};
+
+int main(int argc, char** argv) {
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared&lt;MinimalNode&gt;();
+  rclcpp::spin(____); // node
+  rclcpp::shutdown();
+}</code></pre></section>
+<section><h2>Executor Strategy</h2><ul><li><strong>SingleThreadedExecutor:</strong> deterministic callback order.</li><li><strong>MultiThreadedExecutor:</strong> parallel callbacks for heavy workloads.</li><li>Use callback groups to prevent unsafe concurrent access.</li></ul></section>
+<div class="pager"><a href="cpp_memory.html" class="prev">Pointers &amp; Memory</a><a href="cpp_nodes_pubsub.html" class="next">Custom Nodes + Pub/Sub</a></div></main></div>
+<footer class="site-footer"><p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p></footer>
+<script src="../js/pwa.js" defer></script><script>const menuToggle=document.getElementById('menuToggle');const sidebar=document.getElementById('sidebar');const sidebarOverlay=document.getElementById('sidebarOverlay');function initSidebar(){if(window.innerWidth>968){sidebar.classList.add('active');menuToggle.classList.add('active');}}function toggleSidebar(){const isActive=sidebar.classList.toggle('active');menuToggle.classList.toggle('active');if(window.innerWidth<=968){sidebarOverlay.classList.toggle('active');document.body.style.overflow=isActive?'hidden':'';}}initSidebar();menuToggle.addEventListener('click',toggleSidebar);sidebarOverlay.addEventListener('click',(event)=>{if(event.target===sidebarOverlay&&window.innerWidth<=968){toggleSidebar();}});</script></body></html>

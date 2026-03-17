@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0a0d1a"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><title>Custom Nodes + Pub/Sub - ROS2 Mastery Dojo</title><link rel="manifest" href="../manifest.webmanifest"><link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/print.css" media="print"></head>
+<body><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button><div class="sidebar-overlay" id="sidebarOverlay"></div>
+<header class="site-header"><h1>Natraj • ROS2 Mastery Dojo</h1><p class="tagline">One focused hour a day. Real robots, real code, real skills.</p></header>
+<div class="site-wrapper"><nav class="sidebar" id="sidebar"><h2>C++ for Robotics</h2><ul><li><a href="cpp_robotics.html">C++ for Robotics</a></li><li><a href="cpp_oop.html">OOP in C++</a></li><li><a href="cpp_memory.html">Pointers &amp; Memory</a></li><li><a href="cpp_rclcpp.html">rclcpp Essentials</a></li><li><a href="cpp_nodes_pubsub.html" class="active">Custom Nodes + Pub/Sub</a></li><li><a href="cpp_smart_pointers.html">Smart Pointers</a></li></ul></nav>
+<main class="main-content"><nav class="breadcrumb"><a href="../index.html">Home</a> &gt; <a href="cpp_robotics.html">C++ for Robotics</a> &gt; Custom Nodes</nav><h1 class="page-title">Custom ROS2 Nodes + Pub/Sub</h1><p class="page-outcome">Build maintainable class-based C++ nodes with publishers, subscribers, timers, and clean callback structure.</p>
+<section><h2>Publisher Pattern</h2><pre><code class="cpp">class Talker : public rclcpp::Node {
+public:
+  Talker() : Node("talker") {
+    pub_ = create_publisher&lt;std_msgs::msg::String&gt;("/chatter", 10);
+    timer_ = create_wall_timer(500ms, [this]() {
+      std_msgs::msg::String msg;
+      msg.data = "hello";
+      pub_-&gt;publish(msg);
+    });
+  }
+private:
+  rclcpp::Publisher&lt;std_msgs::msg::String&gt;::SharedPtr pub_;
+  rclcpp::TimerBase::SharedPtr timer_;
+};</code></pre></section>
+<section><h2>Subscriber Pattern</h2><pre><code class="cpp">class Listener : public rclcpp::Node {
+public:
+  Listener() : Node("listener") {
+    sub_ = create_subscription&lt;std_msgs::msg::String&gt;(
+      "/chatter", 10,
+      [this](const std_msgs::msg::String::SharedPtr msg){
+        RCLCPP_INFO(get_logger(), "heard: %s", msg-&gt;data.c_str());
+      });
+  }
+private:
+  rclcpp::Subscription&lt;std_msgs::msg::String&gt;::SharedPtr sub_;
+};</code></pre></section>
+<div class="pager"><a href="cpp_rclcpp.html" class="prev">rclcpp Essentials</a><a href="cpp_smart_pointers.html" class="next">Smart Pointers</a></div></main></div>
+<footer class="site-footer"><p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p></footer>
+<script src="../js/pwa.js" defer></script><script>const menuToggle=document.getElementById('menuToggle');const sidebar=document.getElementById('sidebar');const sidebarOverlay=document.getElementById('sidebarOverlay');function initSidebar(){if(window.innerWidth>968){sidebar.classList.add('active');menuToggle.classList.add('active');}}function toggleSidebar(){const isActive=sidebar.classList.toggle('active');menuToggle.classList.toggle('active');if(window.innerWidth<=968){sidebarOverlay.classList.toggle('active');document.body.style.overflow=isActive?'hidden':'';}}initSidebar();menuToggle.addEventListener('click',toggleSidebar);sidebarOverlay.addEventListener('click',(event)=>{if(event.target===sidebarOverlay&&window.innerWidth<=968){toggleSidebar();}});</script></body></html>

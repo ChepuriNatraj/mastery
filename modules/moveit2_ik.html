@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0d1a"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>IK Solvers (KDL vs TRAC-IK) - ROS2 Mastery Dojo</title>
+  <link rel="manifest" href="../manifest.webmanifest"><link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button><div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <header class="site-header"><h1>Natraj • ROS2 Mastery Dojo</h1><p class="tagline">One focused hour a day. Real robots, real code, real skills.</p></header>
+
+  <div class="site-wrapper"><nav class="sidebar" id="sidebar">
+    <h2>MoveIt2</h2><ul>
+      <li><a href="moveit2.html">MoveIt2 Deep Dive</a></li>
+      <li><a href="moveit2_ompl.html">OMPL Planners</a></li>
+      <li><a href="moveit2_ik.html" class="active">IK Solvers (KDL vs TRAC-IK)</a></li>
+      <li><a href="moveit2_cartesian.html">Cartesian Path Planning</a></li>
+      <li><a href="moveit2_grasping.html">Grasping &amp; Gripper Basics</a></li>
+    </ul>
+    <h2>C++ for Robotics</h2><ul>
+      <li><a href="cpp_robotics.html">C++ for Robotics</a></li>
+      <li><a href="cpp_oop.html">OOP in C++</a></li>
+      <li><a href="cpp_memory.html">Pointers &amp; Memory</a></li>
+      <li><a href="cpp_rclcpp.html">rclcpp Essentials</a></li>
+      <li><a href="cpp_nodes_pubsub.html">Custom Nodes + Pub/Sub</a></li>
+      <li><a href="cpp_smart_pointers.html">Smart Pointers</a></li>
+    </ul>
+  </nav>
+
+  <main class="main-content">
+    <nav class="breadcrumb"><a href="../index.html">Home</a> &gt; <a href="moveit2.html">MoveIt2</a> &gt; IK Solvers</nav>
+    <h1 class="page-title">Inverse Kinematics: KDL vs TRAC-IK</h1>
+    <p class="page-outcome">Deeply understand IK behavior, solver trade-offs, and practical tuning so arm planning succeeds reliably in real robot workspaces.</p>
+
+    <section>
+      <h2>What / Why / When</h2>
+      <h3>What</h3>
+      <p>Inverse kinematics (IK) computes joint values for a desired end-effector pose. In MoveIt2, the kinematics plugin performs this step before trajectory generation. If IK fails, planning often fails immediately.</p>
+      <h3>Why</h3>
+      <p>Many “planner failures” are actually IK failures caused by singularities, unreachable targets, tight tolerances, or poor seed states. Solver choice directly affects mission reliability.</p>
+      <h3>When</h3>
+      <p>Use KDL for simple setups and quick defaults. Use TRAC-IK for higher success near joint limits and workspace boundaries, especially in pick-and-place and constrained manipulation.</p>
+    </section>
+
+    <section>
+      <h2>KDL vs TRAC-IK Comparison</h2>
+      <table>
+        <thead><tr><th>Aspect</th><th>KDL</th><th>TRAC-IK</th></tr></thead>
+        <tbody>
+          <tr><td>Method</td><td>Iterative Jacobian</td><td>Dual strategy (optimization + random restarts)</td></tr>
+          <tr><td>Speed</td><td>Very fast</td><td>Fast</td></tr>
+          <tr><td>Success near limits</td><td>Moderate</td><td>High</td></tr>
+          <tr><td>Joint limit handling</td><td>Can struggle</td><td>Stronger</td></tr>
+          <tr><td>Best use</td><td>Baseline / simple reachability</td><td>Production manipulation reliability</td></tr>
+        </tbody>
+      </table>
+
+      <h3>10-Minute Drill</h3>
+      <pre><code class="yaml"># kinematics.yaml
+arm:
+  kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+  kinematics_solver_timeout: 0.005
+  kinematics_solver_attempts: 3
+  solve_type: ____  # Speed / Distance
+
+# fallback default
+# kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin</code></pre>
+    </section>
+
+    <section>
+      <h2>Concept ↔ Code</h2>
+      <pre><code class="cpp">geometry_msgs::msg::Pose target;
+target.orientation.w = 1.0;
+target.position.x = 0.45;
+target.position.y = 0.00;
+target.position.z = 0.35;
+
+move_group.setPoseTarget(target);
+move_group.setGoalPositionTolerance(0.005);
+move_group.setGoalOrientationTolerance(0.01);
+
+moveit::planning_interface::MoveGroupInterface::Plan plan;
+bool ok = move_group.plan(plan) == moveit::core::MoveItErrorCode::SUCCESS;
+if (ok) move_group.execute(plan);
+
+// If failures persist near limits, increase planning attempts
+move_group.setNumPlanningAttempts(____); // 5</code></pre>
+    </section>
+
+    <section>
+      <h2>Common Failures &amp; Fix Patterns</h2>
+      <ul>
+        <li><strong>Pose unreachable:</strong> move target inside workspace, validate frame and TCP link.</li>
+        <li><strong>Intermittent IK:</strong> increase attempts and switch KDL → TRAC-IK.</li>
+        <li><strong>Flipped wrist solutions:</strong> add orientation constraints and joint bounds.</li>
+        <li><strong>Slow planning:</strong> reduce tolerances only as needed, not overly strict.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Verify</h2>
+      <pre><code class="bash">ros2 param get /move_group robot_description_kinematics
+ros2 service call /compute_ik moveit_msgs/srv/GetPositionIK "{ik_request:{group_name:'arm'}}"
+ros2 topic echo /rosout | grep -i -E "ik|kinematics|trac|kdl"</code></pre>
+    </section>
+
+    <div class="pager"><a href="moveit2_ompl.html" class="prev">OMPL Planners</a><a href="moveit2_cartesian.html" class="next">Cartesian Path Planning</a></div>
+  </main></div>
+
+  <footer class="site-footer"><p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p></footer>
+  <script src="../js/pwa.js" defer></script>
+  <script>
+    const menuToggle=document.getElementById('menuToggle'); const sidebar=document.getElementById('sidebar'); const sidebarOverlay=document.getElementById('sidebarOverlay');
+    function initSidebar(){if(window.innerWidth>968){sidebar.classList.add('active');menuToggle.classList.add('active');}}
+    function toggleSidebar(){const isActive=sidebar.classList.toggle('active');menuToggle.classList.toggle('active');if(window.innerWidth<=968){sidebarOverlay.classList.toggle('active');document.body.style.overflow=isActive?'hidden':'';}}
+    initSidebar(); menuToggle.addEventListener('click',toggleSidebar); sidebarOverlay.addEventListener('click',(event)=>{if(event.target===sidebarOverlay&&window.innerWidth<=968){toggleSidebar();}});
+  </script>
+</body>
+</html>

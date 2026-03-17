@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0d1a"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>OOP in C++ - ROS2 Mastery Dojo</title>
+  <link rel="manifest" href="../manifest.webmanifest"><link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu"><span></span><span></span><span></span></button><div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <header class="site-header"><h1>Natraj • ROS2 Mastery Dojo</h1><p class="tagline">One focused hour a day. Real robots, real code, real skills.</p></header>
+
+  <div class="site-wrapper"><nav class="sidebar" id="sidebar">
+    <h2>MoveIt2</h2><ul>
+      <li><a href="moveit2.html">MoveIt2 Deep Dive</a></li>
+      <li><a href="moveit2_ompl.html">OMPL Planners</a></li>
+      <li><a href="moveit2_ik.html">IK Solvers (KDL vs TRAC-IK)</a></li>
+      <li><a href="moveit2_cartesian.html">Cartesian Path Planning</a></li>
+      <li><a href="moveit2_grasping.html">Grasping &amp; Gripper Basics</a></li>
+    </ul>
+    <h2>C++ for Robotics</h2><ul>
+      <li><a href="cpp_robotics.html">C++ for Robotics</a></li>
+      <li><a href="cpp_oop.html" class="active">OOP in C++</a></li>
+      <li><a href="cpp_memory.html">Pointers &amp; Memory</a></li>
+      <li><a href="cpp_rclcpp.html">rclcpp Essentials</a></li>
+      <li><a href="cpp_nodes_pubsub.html">Custom Nodes + Pub/Sub</a></li>
+      <li><a href="cpp_smart_pointers.html">Smart Pointers</a></li>
+    </ul>
+  </nav>
+
+  <main class="main-content">
+    <nav class="breadcrumb"><a href="../index.html">Home</a> &gt; <a href="cpp_robotics.html">C++ for Robotics</a> &gt; OOP</nav>
+    <h1 class="page-title">OOP in C++ for Robotics</h1>
+    <p class="page-outcome">Use class design, inheritance, and polymorphism to build reusable controllers, sensors, and ROS2 plugin architectures.</p>
+
+    <section>
+      <h2>What / Why / When</h2>
+      <h3>What</h3>
+      <p>Object-oriented design in robotics models each subsystem as a class: drivers, estimators, planners, controllers. Common interfaces are declared as abstract base classes.</p>
+      <h3>Why</h3>
+      <p>You need swappable algorithms and maintainable code. Nav2 and MoveIt2 are plugin-heavy frameworks built around polymorphism and interfaces.</p>
+      <h3>When</h3>
+      <p>Use inheritance for framework/plugin contracts. Prefer composition for internal implementation details to keep modules decoupled and testable.</p>
+    </section>
+
+    <section>
+      <h2>10-Minute Drill</h2>
+      <pre><code class="cpp">class SensorBase {
+public:
+  virtual double read() = 0;
+  virtual std::string name() const = 0;
+  virtual ~SensorBase() = default;
+};
+
+class LidarSensor : public SensorBase {
+public:
+  double read() override { return 4.2; }
+  std::string name() const override { return "LidarSensor"; }
+};
+
+class ImuSensor : public SensorBase {
+public:
+  double read() override { return 9.81; }
+  std::string name() const override { return ____; } // "ImuSensor"
+};</code></pre>
+    </section>
+
+    <section>
+      <h2>Concept ↔ Code (Plugin Style)</h2>
+      <pre><code class="cpp">class ControllerBase {
+public:
+  virtual void configure(const rclcpp::Node::SharedPtr&amp; node) = 0;
+  virtual geometry_msgs::msg::Twist computeCommand() = 0;
+  virtual ~ControllerBase() = default;
+};
+
+class FollowPathController : public ControllerBase {
+public:
+  void configure(const rclcpp::Node::SharedPtr&amp; node) override { node_ = node; }
+  geometry_msgs::msg::Twist computeCommand() override {
+    geometry_msgs::msg::Twist cmd;
+    cmd.linear.x = 0.2;
+    return cmd;
+  }
+private:
+  rclcpp::Node::SharedPtr node_;
+};
+
+std::unique_ptr&lt;ControllerBase&gt; controller = std::make_unique&lt;FollowPathController&gt;();
+controller-&gt;configure(node);</code></pre>
+    </section>
+
+    <section>
+      <h2>Common Failures &amp; Fix Patterns</h2>
+      <ul>
+        <li><strong>Missing virtual destructor:</strong> causes undefined behavior on delete through base pointer.</li>
+        <li><strong>Inheritance overuse:</strong> too deep hierarchies. Prefer composition.</li>
+        <li><strong>Interface drift:</strong> add <code>override</code> to catch signature mistakes.</li>
+        <li><strong>Tight coupling:</strong> depend on interfaces, not concrete classes.</li>
+      </ul>
+    </section>
+
+    <div class="pager"><a href="cpp_robotics.html" class="prev">C++ for Robotics</a><a href="cpp_memory.html" class="next">Pointers &amp; Memory</a></div>
+  </main></div>
+
+  <footer class="site-footer"><p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p></footer>
+  <script src="../js/pwa.js" defer></script>
+  <script>
+    const menuToggle=document.getElementById('menuToggle'); const sidebar=document.getElementById('sidebar'); const sidebarOverlay=document.getElementById('sidebarOverlay');
+    function initSidebar(){if(window.innerWidth>968){sidebar.classList.add('active');menuToggle.classList.add('active');}}
+    function toggleSidebar(){const isActive=sidebar.classList.toggle('active');menuToggle.classList.toggle('active');if(window.innerWidth<=968){sidebarOverlay.classList.toggle('active');document.body.style.overflow=isActive?'hidden':'';}}
+    initSidebar(); menuToggle.addEventListener('click',toggleSidebar); sidebarOverlay.addEventListener('click',(event)=>{if(event.target===sidebarOverlay&&window.innerWidth<=968){toggleSidebar();}});
+  </script>
+</body>
+</html>
