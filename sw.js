@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ros2-dojo-v1';
+const CACHE_NAME = 'ros2-dojo-v2';
 
 const PRECACHE_URLS = [
   './',
@@ -30,7 +30,9 @@ const PRECACHE_URLS = [
   './modules/slam.html',
   './modules/testing.html',
   './modules/tf.html',
-  './modules/urdf.html'
+  './modules/urdf.html',
+  './modules/moveit2.html',
+  './modules/cpp_robotics.html'
 ];
 
 self.addEventListener('install', (event) => {

@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0d1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>MoveIt2 - ROS2 Mastery Dojo</title>
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Animated Background Bubbles -->
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  <div class="bubble"></div>
+
+  
+
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <header class="site-header">
+    <h1>Natraj • ROS2 Mastery Dojo</h1>
+    <p class="tagline">One focused hour a day. Real robots, real code, real skills.</p>
+  </header>
+
+  <div class="site-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <h2>Core ROS2</h2>
+      <ul>
+        <li><a href="pubsub.html">Publish/Subscribe</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="actions.html">Actions</a></li>
+        <li><a href="params.html">Parameters</a></li>
+        <li><a href="launch.html">Launch Files</a></li>
+        <li><a href="qos.html">QoS Policies</a></li>
+        <li><a href="lifecycle.html">Lifecycle Nodes</a></li>
+      </ul>
+
+      <h2>Robotics Model</h2>
+      <ul>
+        <li><a href="tf.html">TF Transforms</a></li>
+        <li><a href="urdf.html">URDF Models</a></li>
+        <li><a href="gazebo.html">Gazebo Simulation</a></li>
+        <li><a href="bag.html">Bag Recording</a></li>
+      </ul>
+
+      <h2>SLAM &amp; Nav2</h2>
+      <ul>
+        <li><a href="slam.html">SLAM Toolbox</a></li>
+        <li><a href="amcl.html">AMCL Localization</a></li>
+        <li><a href="nav2.html">Nav2 Stack</a></li>
+        <li><a href="costmaps.html">Costmaps</a></li>
+        <li><a href="planners.html">Path Planners</a></li>
+        <li><a href="controllers.html">Controllers</a></li>
+        <li><a href="bt.html">Behavior Trees</a></li>
+        <li><a href="recovery.html">Recovery Behaviors</a></li>
+      </ul>
+
+      <h2>Ops &amp; Quality</h2>
+      <ul>
+        <li><a href="build.html">Build System</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="dds.html">DDS &amp; Discovery</a></li>
+      </ul>
+
+      <h2>MoveIt2 &amp; C++</h2>
+      <ul>
+        <li><a href="moveit2.html" class="active">MoveIt2</a></li>
+        <li><a href="cpp_robotics.html">C++ for Robotics</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <nav class="breadcrumb">
+        <a href="../index.html">Home</a> &gt; <a href="#moveit2">MoveIt2 &amp; C++</a> &gt; MoveIt2
+      </nav>
+
+      <h1 class="page-title">MoveIt2</h1>
+      <p class="page-outcome">Plan and execute collision-free arm motions using MoveIt2's motion planning framework.</p>
+
+      <div class="pills">
+        <span class="pill pill-bt">Motion Planning</span>
+        <span class="pill pill-rviz">RViz2</span>
+        <span class="pill pill-cpu">C++ Heavy</span>
+      </div>
+
+      <section>
+        <h2>What / Why / When</h2>
+
+        <h3>What</h3>
+        <p>MoveIt2 is the premier motion planning framework for ROS2. It provides collision-aware trajectory planning for robotic arms and manipulators. Core components: MoveGroupInterface (C++ API), PlanningScene (world model with obstacles), OMPL/CHOMP/PILZ planners (compute collision-free paths), KDL/KDL-IK/BioIK kinematics solvers, and RViz2 Motion Planning plugin. MoveIt2 wraps these components into action servers that accept goal poses and return joint trajectories. The robot URDF + SRDF define the kinematic chain, joint limits, and planning groups. MoveIt2 natively integrates with ROS2 controllers via FollowJointTrajectory action.</p>
+
+        <h3>Why</h3>
+        <p>Manual arm trajectory planning is intractable: 6-DOF robots have complex joint interactions, obstacle avoidance in 6D configuration space requires sampling-based algorithms (RRT, PRM), and inverse kinematics has multiple solutions requiring selection logic. MoveIt2 solves all of this: OMPL planners handle high-dimensional planning, FCL collision checking prevents crashes, and IK solvers convert Cartesian goals to joint angles. Without MoveIt2, building safe manipulation requires months of custom planning code. With it, you plan to a Cartesian pose in 3 lines of C++.</p>
+
+        <h3>When</h3>
+        <p>Use MoveIt2 for any robotic arm manipulation: pick-and-place, assembly tasks, welding paths, and surgical robotics. Use it when you need collision-aware planning (workspace with obstacles), Cartesian planning (straight-line end-effector motion), or joint-space planning (move specific joints). Don't use MoveIt2 for mobile base navigation (use Nav2 instead) or for simple joint trajectory following without planning. For time-critical control loops under 10ms, use custom controllers; MoveIt2 planning latency is 50–500ms.</p>
+      </section>
+
+      <section>
+        <h2>10-Minute Drill</h2>
+
+        <h3>C++ Micro-Task: Move to Named Target</h3>
+        <p>Plan and execute motion to a pre-defined named configuration (e.g., "home"):</p>
+        <pre><code class="c++">#include &lt;rclcpp/rclcpp.hpp&gt;
+#include &lt;moveit/move_group_interface/move_group_interface.h&gt;
+
+int main(int argc, char* argv[]) {
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared&lt;rclcpp::Node&gt;("moveit_drill");
+  auto logger = node-&gt;get_logger();
+
+  // Spin node in background thread for MoveIt callbacks
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node);
+  auto spin_thread = std::thread([&amp;executor]() { executor.spin(); });
+
+  // Connect to planning group (name defined in SRDF)
+  moveit::planning_interface::MoveGroupInterface move_group(node, "____");  // "arm"
+
+  // Option A: Move to named target
+  move_group.setNamedTarget("____");  // "home"
+  moveit::planning_interface::MoveGroupInterface::Plan plan;
+  bool success = (move_group.plan(plan) == moveit::core::MoveItErrorCode::SUCCESS);
+  RCLCPP_INFO(logger, "Plan %s", success ? "SUCCEEDED" : "FAILED");
+
+  if (success) {
+    move_group.____();  // execute()
+  }
+
+  rclcpp::shutdown();
+  spin_thread.join();
+  return 0;
+}</code></pre>
+
+        <h3>C++ Micro-Task: Move to Cartesian Pose</h3>
+        <p>Plan to a specific end-effector position and orientation:</p>
+        <pre><code class="c++">#include &lt;geometry_msgs/msg/pose.hpp&gt;
+
+// Set Cartesian target pose
+geometry_msgs::msg::Pose target_pose;
+target_pose.position.x = ____;   // 0.4
+target_pose.position.y = ____;   // 0.0
+target_pose.position.z = ____;   // 0.5
+// Quaternion for identity orientation (no rotation)
+target_pose.orientation.w = 1.0;
+
+move_group.setPoseTarget(____);  // target_pose
+auto [success, plan] = [&amp;]() {
+  moveit::planning_interface::MoveGroupInterface::Plan p;
+  return std::make_pair(
+    move_group.plan(p) == moveit::core::MoveItErrorCode::SUCCESS, p);
+}();
+
+if (success) {
+  move_group.execute(plan);
+}</code></pre>
+
+        <h3>Python Micro-Task: Cartesian Path Planning</h3>
+        <p>Compute a straight-line Cartesian path through waypoints:</p>
+        <pre><code class="python">import rclpy
+from rclpy.node import Node
+from moveit.planning import MoveItPy
+from geometry_msgs.msg import Pose
+
+rclpy.init()
+moveit = MoveItPy(node_name="moveit_py_drill")
+arm = moveit.get_planning_component("____")  # "arm"
+
+# Define waypoints for Cartesian path
+waypoints = []
+wpose = arm.get_current_pose().pose
+
+wpose.position.z -= ____  # 0.1  (move down)
+waypoints.append(wpose)
+
+wpose.position.x += ____  # 0.2  (move forward)
+waypoints.append(wpose)
+
+# Plan Cartesian path (fraction = proportion of path achieved)
+(plan, fraction) = arm.compute_cartesian_path(
+    waypoints,
+    eef_step=____,    # 0.01 (1cm resolution)
+    jump_threshold=____)  # 0.0 (disable jump check)
+
+print(f"Cartesian path fraction: {fraction:.2f}")
+if fraction > 0.9:
+    arm.execute(plan, controllers=[])
+rclpy.shutdown()</code></pre>
+      </section>
+
+      <section>
+        <h2>Concept ↔ Code (Python vs C++)</h2>
+
+        <h3>Initialize MoveGroupInterface</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">moveit::planning_interface::MoveGroupInterface
+  move_group(node, "arm");</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">moveit = MoveItPy(node_name="node")
+arm = moveit.get_planning_component("arm")</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Set Joint Target</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">std::vector&lt;double&gt; joint_vals = {0.0, -1.57, 0.0, -1.57, 0.0, 0.0};
+move_group.setJointValueTarget(joint_vals);</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">arm.set_goal_state(
+    joint_constraints={"joint1": 0.0,
+                       "joint2": -1.57})</code></pre>
+            </td>
+          </tr>
+        </table>
+
+        <h3>Get Current State</h3>
+        <table>
+          <tr>
+            <th>C++</th>
+            <th>Python</th>
+          </tr>
+          <tr>
+            <td>
+              <pre><code class="c++">auto current_pose =
+  move_group.getCurrentPose();
+auto joints =
+  move_group.getCurrentJointValues();</code></pre>
+            </td>
+            <td>
+              <pre><code class="python">current_state = arm.get_current_state()
+current_pose = arm.get_current_pose()</code></pre>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Parameters &amp; Config</h2>
+
+        <h3>SRDF — Planning Groups</h3>
+        <pre><code class="xml">&lt;!-- my_robot.srdf --&gt;
+&lt;robot name="my_robot"&gt;
+
+  &lt;!-- Define planning group for the arm --&gt;
+  &lt;group name="arm"&gt;
+    &lt;chain base_link="base_link" tip_link="wrist_link"/&gt;
+  &lt;/group&gt;
+
+  &lt;!-- Define planning group for gripper --&gt;
+  &lt;group name="gripper"&gt;
+    &lt;joint name="finger_joint_left"/&gt;
+    &lt;joint name="finger_joint_right"/&gt;
+  &lt;/group&gt;
+
+  &lt;!-- Named positions for setNamedTarget() --&gt;
+  &lt;group_state name="home" group="arm"&gt;
+    &lt;joint name="joint1" value="0"/&gt;
+    &lt;joint name="joint2" value="-1.5708"/&gt;
+    &lt;joint name="joint3" value="0"/&gt;
+    &lt;joint name="joint4" value="-1.5708"/&gt;
+    &lt;joint name="joint5" value="0"/&gt;
+    &lt;joint name="joint6" value="0"/&gt;
+  &lt;/group_state&gt;
+
+  &lt;!-- Self-collision pairs to ignore (speed up planning) --&gt;
+  &lt;disable_collisions link1="link1" link2="base_link" reason="Adjacent"/&gt;
+
+&lt;/robot&gt;</code></pre>
+
+        <h3>MoveIt2 OMPL Planner Config (YAML)</h3>
+        <pre><code class="yaml">move_group:
+  ros__parameters:
+    planning_plugin: ompl_interface/OMPLPlanner
+    request_adapters:
+      - default_planner_request_adapters/AddTimeOptimalParameterization
+      - default_planner_request_adapters/ResolveConstraintFrames
+      - default_planner_request_adapters/FixWorkspaceBounds
+    start_state_max_bounds_error: 0.1
+
+ompl:
+  arm:
+    planner_configs:
+      - RRTConnectkConfigDefault
+    projection_evaluator: joints(joint1,joint2)
+    longest_valid_segment_fraction: 0.005
+
+  RRTConnectkConfigDefault:
+    type: geometric::RRTConnect
+    range: 0.0  # 0 = auto-compute</code></pre>
+
+        <h3>Planning Scene: Add Collision Object</h3>
+        <pre><code class="c++">#include &lt;moveit/planning_scene_interface/planning_scene_interface.h&gt;
+#include &lt;moveit_msgs/msg/collision_object.hpp&gt;
+#include &lt;shape_msgs/msg/solid_primitive.hpp&gt;
+
+moveit::planning_interface::PlanningSceneInterface psi;
+
+moveit_msgs::msg::CollisionObject box;
+box.header.frame_id = "base_link";
+box.id = "obstacle_box";
+
+shape_msgs::msg::SolidPrimitive primitive;
+primitive.type = shape_msgs::msg::SolidPrimitive::BOX;
+primitive.dimensions = {0.1, 0.1, 0.5};  // x, y, z in meters
+
+geometry_msgs::msg::Pose box_pose;
+box_pose.position.x = 0.5;
+box_pose.position.y = 0.0;
+box_pose.position.z = 0.25;
+box_pose.orientation.w = 1.0;
+
+box.primitives.push_back(primitive);
+box.primitive_poses.push_back(box_pose);
+box.operation = moveit_msgs::msg::CollisionObject::ADD;
+
+psi.applyCollisionObject(box);</code></pre>
+      </section>
+
+      <section>
+        <h2>Verify</h2>
+
+        <h3>Launch MoveIt2 Demo</h3>
+        <pre><code class="bash"># Launch MoveIt2 with RViz2 (replace with your robot package)
+ros2 launch my_robot_moveit_config demo.launch.py
+
+# Check planning groups are available
+ros2 topic echo /move_group/status
+
+# List action servers
+ros2 action list
+# Expected: /move_action, /execute_trajectory
+
+# Check planning scene service
+ros2 service list | grep planning_scene
+# Expected: /apply_planning_scene, /get_planning_scene</code></pre>
+
+        <h3>Interactive Marker in RViz2</h3>
+        <pre><code class="bash"># In RViz2 Motion Planning panel:
+# 1. Select Planning Group: "arm"
+# 2. Drag the interactive marker (orange sphere) to goal pose
+# 3. Click "Plan" - green path should appear
+# 4. Click "Execute" - robot moves to target
+
+# Verify via CLI after execution
+ros2 topic echo /joint_states
+# Expected: joint positions should match target</code></pre>
+
+        <h3>Command-Line Planning Test</h3>
+        <pre><code class="bash"># Build and run the drill node
+colcon build --packages-select moveit2_drill
+source install/setup.bash
+ros2 run moveit2_drill moveit_drill_node
+
+# Monitor motion execution
+ros2 action list
+ros2 topic echo /arm_controller/joint_trajectory</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pro Tip:</strong>
+          <p>Use <code>move_group.setPlanningTime(5.0)</code> to give the planner more time for complex environments. Default is 5 seconds but tight configurations may need 10–30 seconds.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Common Failures &amp; Fix Patterns</h2>
+
+        <h3>Failure 1: Planning Failed - No IK Solution</h3>
+        <p><strong>Symptom:</strong> <code>Failed to find IK solution</code> in logs, plan returns FAILURE.</p>
+        <p><strong>Root Cause:</strong> Target pose is outside the robot's workspace, or the IK solver has numerical singularities near the target.</p>
+        <p><strong>Fix:</strong> Check workspace limits and try nearby poses:</p>
+        <pre><code class="c++">// Check if pose is reachable before planning
+bool found_ik = move_group.setApproximateJointValueTarget(target_pose, "end_effector");
+RCLCPP_INFO(logger, "IK %s", found_ik ? "FOUND" : "NOT FOUND");
+
+// Try with tolerance for approximate IK
+move_group.setGoalOrientationTolerance(0.1);  // 0.1 rad tolerance
+move_group.setGoalPositionTolerance(0.01);    // 1cm tolerance</code></pre>
+
+        <h3>Failure 2: Motion Planning Timeout</h3>
+        <p><strong>Symptom:</strong> Planning takes too long or times out with <code>TIMED_OUT</code> error.</p>
+        <p><strong>Root Cause:</strong> Narrow passages in configuration space, too many collision objects, or planner requires more time.</p>
+        <p><strong>Fix:</strong> Increase planning time or switch planners:</p>
+        <pre><code class="c++">// Increase planning time (default: 5.0 seconds)
+move_group.setPlanningTime(15.0);
+
+// Try a different planner
+move_group.setPlannerId("RRTstar");  // More optimal but slower
+// or
+move_group.setPlannerId("LazyPRMkConfigDefault");  // Good for repeated queries</code></pre>
+
+        <h3>Failure 3: Collision Object Not Detected</h3>
+        <p><strong>Symptom:</strong> Robot plans through known obstacles in the scene.</p>
+        <p><strong>Root Cause:</strong> Collision object not added to planning scene, or frame_id mismatch.</p>
+        <p><strong>Fix:</strong> Verify planning scene and check frame IDs:</p>
+        <pre><code class="bash"># Check current planning scene contents
+ros2 service call /get_planning_scene moveit_msgs/srv/GetPlanningScene \
+  "{components: {components: 1}}"
+
+# Expected output shows all registered collision objects</code></pre>
+        <pre><code class="c++">// Verify frame_id matches robot base frame
+box.header.frame_id = move_group.getPlanningFrame();
+// getPlanningFrame() returns "base_link" or "world" - match this exactly</code></pre>
+      </section>
+
+      <section>
+        <h2>Failure Injection Drill</h2>
+
+        <h3>Exercise: Force a Planning Failure</h3>
+        <p>Add a collision box blocking the entire workspace, then observe planning failure and recovery:</p>
+
+        <pre><code class="c++">// Step 1: Add an impenetrable wall in front of the robot
+moveit_msgs::msg::CollisionObject wall;
+wall.header.frame_id = "base_link";
+wall.id = "blocking_wall";
+
+shape_msgs::msg::SolidPrimitive wall_prim;
+wall_prim.type = shape_msgs::msg::SolidPrimitive::BOX;
+wall_prim.dimensions = {0.02, 2.0, 2.0};  // thin tall wall
+
+geometry_msgs::msg::Pose wall_pose;
+wall_pose.position.x = 0.3;
+wall_pose.position.y = 0.0;
+wall_pose.position.z = 1.0;
+wall_pose.orientation.w = 1.0;
+
+wall.primitives.push_back(wall_prim);
+wall.primitive_poses.push_back(wall_pose);
+wall.operation = moveit_msgs::msg::CollisionObject::ADD;
+psi.applyCollisionObject(wall);
+
+// Step 2: Try to plan to pose on the other side of the wall
+// Observe: plan() returns PLANNING_FAILED
+
+// Step 3: Remove wall and replan
+wall.operation = moveit_msgs::msg::CollisionObject::____; // REMOVE
+psi.applyCollisionObject(wall);
+// Observe: plan() now succeeds</code></pre>
+
+        <p><strong>Detection:</strong> Check MoveIt2 logs for collision information:</p>
+        <pre><code class="bash">ros2 run moveit2_drill moveit_drill_node --ros-args --log-level DEBUG
+# Look for: "Collision between... and blocking_wall"</code></pre>
+
+        <div class="callout callout-warning">
+          <strong>Warning:</strong>
+          <p>MoveIt2 planning is non-deterministic with sampling-based planners (RRT, PRM). Running the same plan twice may give different trajectories. Use deterministic planners (PILZ) for repeatable industrial paths.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stretch Goal</h2>
+        <p>Extend your MoveIt2 skills with advanced manipulation tasks:</p>
+
+        <ol>
+          <li>Implement a pick-and-place pipeline: detect object pose from camera, plan approach, grasp, lift, place</li>
+          <li>Build a Cartesian path executor for welding: straight-line motion along a seam with <code>compute_cartesian_path()</code></li>
+          <li>Add a PlanningSceneMonitor to keep the scene updated from point cloud sensor data</li>
+          <li>Implement constraint-based planning: keep the end-effector level during motion using orientation constraints</li>
+          <li>Benchmark OMPL planners (RRT, RRTConnect, RRTstar, LBKPIECE) on your robot — compare planning time vs path quality</li>
+          <li>Integrate MoveIt2 with a force/torque sensor for compliant grasping</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Resources &amp; Next Steps</h2>
+        <ul>
+          <li><a href="urdf.html">URDF Models</a> - Robot description required by MoveIt2</li>
+          <li><a href="tf.html">TF Transforms</a> - Frame management used in planning scenes</li>
+          <li><a href="actions.html">Actions</a> - MoveIt2 uses action servers for planning and execution</li>
+          <li><a href="cpp_robotics.html">C++ for Robotics</a> - C++ patterns essential for MoveIt2 code</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong>
+          <p>MoveIt2 docs: <code>moveit.picknik.ai/main/doc/tutorials</code></p>
+          <p>OMPL docs: <code>ompl.kavrakilab.org</code></p>
+          <p>Setup Assistant: <code>ros2 launch moveit_setup_assistant setup_assistant.launch.py</code></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a href="dds.html" class="prev">DDS &amp; Discovery</a>
+        <a href="cpp_robotics.html" class="next">C++ for Robotics</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built for Natraj — one focused hour a day. Replace stubs with your real code as you progress.</p>
+  </footer>
+
+  <script src="../js/pwa.js" defer></script>
+  <script>
+    // Sidebar Toggle for All Screen Sizes
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const siteWrapper = document.querySelector('.site-wrapper');
+
+    // Check if sidebar should be open by default on desktop
+    function initSidebar() {
+      if (window.innerWidth > 968) {
+        // Desktop: sidebar open by default
+        sidebar.classList.add('active');
+        menuToggle.classList.add('active');
+      }
+    }
+
+    function toggleSidebar() {
+      const isActive = sidebar.classList.toggle('active');
+      menuToggle.classList.toggle('active');
+      
+      // Only show overlay on mobile
+      if (window.innerWidth <= 968) {
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+      }
+    }
+
+    // Initialize sidebar state on page load
+    initSidebar();
+
+    // Toggle sidebar on button click
+    menuToggle.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking overlay (mobile only)
+    // Only close if clicking the overlay directly, not sidebar elements
+    sidebarOverlay.addEventListener('click', (event) => {
+      if (event.target === sidebarOverlay && window.innerWidth <= 968) {
+        toggleSidebar();
+      }
+    });
+
+    // Close sidebar when clicking a link on mobile
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 968 && sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+          // Desktop: ensure sidebar is open, remove overlay
+          sidebar.classList.add('active');
+          menuToggle.classList.add('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          // Mobile: close sidebar by default
+          sidebar.classList.remove('active');
+          menuToggle.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }, 100);
+    });
+
+    // Dropdown menu toggle for sidebar sections
+    const sidebarHeadings = sidebar.querySelectorAll('h2');
+    sidebarHeadings.forEach(heading => {
+      heading.addEventListener('click', () => {
+        heading.classList.toggle('collapsed');
+      });
+      // Expand all by default on desktop
+      if (window.innerWidth > 968) {
+        heading.classList.remove('collapsed');
+      }
+    });
+
+    // Handle dropdown state on resize
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 968) {
+        // Desktop: expand all sections
+        sidebarHeadings.forEach(h => h.classList.remove('collapsed'));
+      }
+    });
+  </script>
+</body>
+</html>
