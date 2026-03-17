@@ -1263,6 +1263,20 @@ pre {
   font-size: 0.82rem !important;
 }
 
+pre,
+pre code {
+  background-color: #0b1124 !important;
+  background-image: none !important;
+  border-color: var(--border) !important;
+  text-decoration: none !important;
+}
+
+pre code {
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
 code,
 kbd,
 samp,
